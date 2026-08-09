@@ -1,0 +1,140 @@
+/* Tokens de color. Los valores de visualización salen de la paleta validada
+   (ver dataviz/references/palette.md); se declaran como custom properties para
+   que el modo oscuro se resuelva en un solo lugar y el resto del código se
+   escriba contra roles, no contra hex sueltos.
+
+   El modo oscuro es un juego de pasos ELEGIDO para la superficie oscura, no un
+   invertido automático del claro. */
+
+:root {
+  color-scheme: light;
+
+  --surface-1: #fcfcfb; /* superficie de tarjeta/gráfico */
+  --page: #f9f9f7;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781; /* ejes y etiquetas */
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+
+  --series-1: #2a78d6;
+  --series-1-soft: #cde2fb;
+
+  /* Paleta de estado: fija, nunca se reutiliza como color de serie. */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
+  --success-text: #006300;
+
+  --radius: 10px;
+  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --surface-1: #1a1a19;
+    --page: #0d0d0d;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --series-1: #3987e5;
+    --series-1-soft: #184f95;
+    --success-text: #0ca30c;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-1: #1a1a19;
+  --page: #0d0d0d;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+  --series-1: #3987e5;
+  --series-1-soft: #184f95;
+  --success-text: #0ca30c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  background: var(--page);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+.app { max-width: 1180px; margin: 0 auto; padding: 24px 20px 64px; }
+
+.topbar {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 24px;
+}
+.topbar h1 { font-size: 20px; margin: 0; letter-spacing: -0.01em; }
+.topbar .who { color: var(--text-secondary); font-size: 13px; }
+
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+
+.grid-tiles {
+  display: grid; gap: 12px; margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+/* Tarjeta de indicador: número grande, sin gráfico. Cifras proporcionales
+   por defecto; tabular solo donde hay que alinear columnas. */
+.tile .label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+.tile .value { font-size: 30px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+.tile .unit { font-size: 14px; color: var(--text-muted); font-weight: 400; margin-left: 4px; }
+.tile .foot { margin-top: 6px; font-size: 12px; color: var(--text-muted); }
+
+.section { margin-bottom: 20px; }
+.section h2 { font-size: 14px; margin: 0 0 12px; font-weight: 600; }
+.section .sub { font-size: 12px; color: var(--text-secondary); font-weight: 400; margin-left: 8px; }
+
+/* Estado: color + icono + etiqueta. Nunca color solo. */
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+.status .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.status.good .dot { background: var(--status-good); }
+.status.soon .dot { background: var(--status-warning); }
+.status.overdue .dot { background: var(--status-critical); }
+.status.unknown .dot { background: var(--text-muted); }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--text-muted); padding: 8px 10px;
+  border-bottom: 1px solid var(--axis);
+}
+td { padding: 9px 10px; border-bottom: 1px solid var(--grid); color: var(--text-secondary); }
+td.strong { color: var(--text-primary); font-weight: 500; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.muted { color: var(--text-muted); }
+.error {
+  background: var(--surface-1); border: 1px solid var(--status-critical);
+  border-radius: var(--radius); padding: 16px 18px; color: var(--text-primary);
+}
+.toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+.toolbar button {
+  font: inherit; font-size: 12px; padding: 5px 11px; cursor: pointer;
+  background: var(--surface-1); color: var(--text-secondary);
+  border: 1px solid var(--border); border-radius: 999px;
+}
+.toolbar button[aria-pressed="true"] {
+  color: var(--text-primary); border-color: var(--axis); font-weight: 600;
+}
+.skeleton { color: var(--text-muted); font-size: 13px; padding: 8px 0; }
