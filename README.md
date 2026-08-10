@@ -69,8 +69,6 @@ rsync -a --delete dist/ protektor:/var/www/protektor-v2/
 
 El bloque de Caddy (`/etc/caddy/Caddyfile`, respaldo `Caddyfile.bak-prev2`) usa `handle_path /v2/*`, que quita el prefijo — por eso el bundle se compila con `base: "/v2/"`.
 
-## Pendientes
-
 ## Enlace desde el menú del GUI
 
 Ya está enlazado para los 6 roles, sin tocar una línea de PHP: `menu_tag` id 16 + `menu_child` id 38 + filas en `menu_by_roles`.
@@ -82,5 +80,20 @@ $complete_ulr = ($row[5]) ? URL.DS.$row[4] : $row[4];
 ```
 
 `complete_url = 1` antepone la base del GUI (todo queda bajo `/gui/`); `complete_url = 0` usa el valor crudo. Para salir de `/gui/` hay que usar **`complete_url = 0`** con `menu_tag.destination = ''`, de modo que `CONCAT(cat.destination,'/',sub.destination)` dé `/v2/`. En la base hay un intento previo de enlace externo (a RabbitMQ) que quedó deshabilitado justamente por no haber entendido esto.
+
+`father = 1` hace además que la etiqueta visible sea la de la **categoría**, no la del ítem — por eso ambas se llaman igual.
+
+Para verificar el HTML sin credenciales del GUI, se puede ejecutar el código real del menú por CLI (el entorno local apunta a la misma base):
+
+```php
+$_SERVER['HTTP_HOST']='app.protektor.com.gt'; session_start(); $_SESSION['id_logged']=<user_id>;
+// include paths.php, secrets.php, LIB/db.php, menu_min.php
+echo (new MenuMiniModule())->doMenu('/gui/home/index');
+```
+
+Ojo: insertar una fila en `user_sessions` **no** loguea en el GUI — la sesión real vive en el almacenamiento nativo de PHP; esa tabla es un espejo para revocación y para que la API autentique.
+
+## Pendientes
+
 - El semáforo de mantenimiento sale "Sin datos" en empresas que nunca usaron el módulo; el endpoint `/maintenance/types/bootstrap` clona la plantilla global.
 - Mapa en vivo (reemplazo del módulo `monitor`) — el siguiente módulo natural a migrar.
