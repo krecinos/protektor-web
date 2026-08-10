@@ -71,6 +71,16 @@ El bloque de Caddy (`/etc/caddy/Caddyfile`, respaldo `Caddyfile.bak-prev2`) usa 
 
 ## Pendientes
 
-- **Enlazarlo desde el menú del GUI**: insertar filas en `menu_tag`/`menu_child` y habilitarlas en `menu_by_roles` para que aparezca como un módulo más. No requiere tocar código PHP.
+## Enlace desde el menú del GUI
+
+Ya está enlazado para los 6 roles, sin tocar una línea de PHP: `menu_tag` id 16 + `menu_child` id 38 + filas en `menu_by_roles`.
+
+El detalle no obvio es `complete_url`, que significa lo **contrario** de lo que sugiere el nombre. En `menu_min.php`:
+
+```php
+$complete_ulr = ($row[5]) ? URL.DS.$row[4] : $row[4];
+```
+
+`complete_url = 1` antepone la base del GUI (todo queda bajo `/gui/`); `complete_url = 0` usa el valor crudo. Para salir de `/gui/` hay que usar **`complete_url = 0`** con `menu_tag.destination = ''`, de modo que `CONCAT(cat.destination,'/',sub.destination)` dé `/v2/`. En la base hay un intento previo de enlace externo (a RabbitMQ) que quedó deshabilitado justamente por no haber entendido esto.
 - El semáforo de mantenimiento sale "Sin datos" en empresas que nunca usaron el módulo; el endpoint `/maintenance/types/bootstrap` clona la plantilla global.
 - Mapa en vivo (reemplazo del módulo `monitor`) — el siguiente módulo natural a migrar.
