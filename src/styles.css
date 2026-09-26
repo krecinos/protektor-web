@@ -138,3 +138,95 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
   color: var(--text-primary); border-color: var(--axis); font-weight: 600;
 }
 .skeleton { color: var(--text-muted); font-size: 13px; padding: 8px 0; }
+
+/* ─── Leads y Citas (/v2/leads) ─── */
+.small { font-size: 12px; }
+.nowrap { white-space: nowrap; }
+.back { display: inline-block; font-size: 13px; color: var(--text-secondary); text-decoration: none; margin-bottom: 10px; }
+.back:hover { color: var(--text-primary); }
+.status.info .dot { background: var(--series-1); }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--grid); margin-bottom: 14px; }
+.tabs button {
+  font: inherit; font-size: 14px; padding: 8px 14px; cursor: pointer; background: none;
+  color: var(--text-secondary); border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.tabs button[aria-selected="true"] { color: var(--text-primary); font-weight: 600; border-bottom-color: var(--series-1); }
+
+.split { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.split.with-panel { grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); }
+@media (max-width: 900px) { .split.with-panel { grid-template-columns: minmax(0, 1fr); } }
+
+.table-card { padding: 6px 8px; }
+.table-scroll { overflow-x: auto; }
+tr.clickable { cursor: pointer; }
+tr.clickable:hover td { background: color-mix(in srgb, var(--series-1-soft) 35%, transparent); }
+tr.sel td { background: color-mix(in srgb, var(--series-1-soft) 55%, transparent); }
+th.check, td.check { width: 64px; text-align: center; }
+td.check input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--status-good); }
+.strong-inline { color: var(--text-primary); font-weight: 500; }
+.clip-cell { max-width: 240px; }
+.clip { display: inline-block; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+.pill {
+  display: inline-block; min-width: 20px; padding: 0 6px; border-radius: 999px; text-align: center;
+  font-size: 11px; font-weight: 600; background: var(--grid); color: var(--text-primary);
+}
+.contact { display: inline-flex; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+.contact a { color: var(--series-1); text-decoration: none; }
+.contact a:hover { text-decoration: underline; }
+.contact a.wa { color: var(--success-text); font-weight: 600; }
+
+.panel { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 14px; }
+.panel-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.panel-head h2 { font-size: 16px; margin: 0 0 2px; }
+.icon-btn { font: inherit; font-size: 22px; line-height: 1; background: none; border: 0; cursor: pointer; color: var(--text-muted); padding: 0 4px; }
+.icon-btn:hover { color: var(--text-primary); }
+.facts { display: grid; grid-template-columns: 70px 1fr; gap: 6px 10px; margin: 0; font-size: 13px; }
+.facts dt { color: var(--text-muted); }
+.facts dd { margin: 0; color: var(--text-primary); }
+.panel-section { border-top: 1px solid var(--grid); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.panel .label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button {
+  font: inherit; font-size: 12px; padding: 6px 10px; cursor: pointer; border-radius: 8px;
+  background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border);
+}
+.seg button[aria-pressed="true"] { color: var(--text-primary); border-color: var(--series-1); font-weight: 600; box-shadow: inset 0 0 0 1px var(--series-1); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.row.end { justify-content: flex-end; }
+.panel input[type="datetime-local"], .panel textarea {
+  font: inherit; font-size: 13px; color: var(--text-primary); background: var(--page);
+  border: 1px solid var(--axis); border-radius: 8px; padding: 7px 9px; flex: 1 1 180px; min-width: 0;
+}
+.panel textarea { resize: vertical; width: 100%; }
+.panel input:focus, .panel textarea:focus { outline: 2px solid var(--series-1); outline-offset: 1px; }
+button.primary {
+  font: inherit; font-size: 13px; font-weight: 600; padding: 7px 12px; cursor: pointer;
+  background: var(--series-1); color: #fff; border: 0; border-radius: 8px;
+}
+button.primary:disabled, .seg button:disabled { opacity: 0.45; cursor: default; }
+.flash { font-size: 12px; padding: 6px 9px; border-radius: 6px; }
+.flash.ok { color: var(--success-text); background: color-mix(in srgb, var(--status-good) 12%, transparent); }
+.flash.bad { color: var(--status-critical); background: color-mix(in srgb, var(--status-critical) 10%, transparent); }
+.history { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto; }
+.history li { display: flex; gap: 8px; font-size: 13px; }
+.h-icon { flex: none; width: 20px; text-align: center; }
+.h-body { color: var(--text-primary); white-space: pre-wrap; word-break: break-word; }
+.h-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* Móvil: indicadores 2x2 y cada fila como tarjeta (sin scroll horizontal). */
+@media (max-width: 640px) {
+  .leads .grid-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .leads .tile { padding: 12px 14px; }
+  .leads .tile .value { font-size: 24px; }
+  .leads .tile .foot { display: none; }
+  .leads .table-card table, .leads .table-card tbody, .leads .table-card tr, .leads .table-card td { display: block; width: 100%; }
+  .leads .table-card thead { display: none; }
+  .leads .table-card tr { position: relative; padding: 10px 48px 10px 6px; border-bottom: 1px solid var(--grid); }
+  .leads .table-card tr:last-child { border-bottom: 0; }
+  .leads .table-card td { border: 0; padding: 2px 0; max-width: none; }
+  .leads .table-card td.check { position: absolute; right: 4px; top: 10px; width: auto; }
+  .leads .table-card td[data-label]::before { content: attr(data-label) " · "; color: var(--text-muted); font-size: 11px; }
+  .leads .clip { max-width: 70vw; }
+  .leads .panel { position: static; }
+}

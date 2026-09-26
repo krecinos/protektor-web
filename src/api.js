@@ -15,10 +15,15 @@ export class ApiError extends Error {
   }
 }
 
-async function get(path) {
+async function request(method, path, body) {
   const res = await fetch(`${BASE}${path}`, {
+    method,
     credentials: "include", // manda la cookie de sesión
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
     let detail = null;
@@ -32,7 +37,18 @@ async function get(path) {
   return res.json();
 }
 
+const get = (path) => request("GET", path);
+const patch = (path, body) => request("PATCH", path, body);
+
 export const api = {
+  // Gestión de citas y leads del bot (solo administradores).
+  appointments: (params = "") => get(`/chat/appointments?limit=500${params}`),
+  updateAppointment: (id, body) => patch(`/chat/appointments/${id}`, body),
+  appointmentHistory: (id) => get(`/chat/appointments/${id}/followups`),
+  leads: (params = "") => get(`/chat/leads?limit=500${params}`),
+  updateLead: (id, body) => patch(`/chat/leads/${id}`, body),
+  leadHistory: (id) => get(`/chat/leads/${id}/followups`),
+
   whoami: () => get("/auth/whoami"),
   devices: (limit = 500) => get(`/fleet/devices?limit=${limit}`),
   positions: () => get("/fleet/positions"),
