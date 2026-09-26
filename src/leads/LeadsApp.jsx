@@ -78,6 +78,10 @@ export default function LeadsApp() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    document.title = "Protektor — Leads y Citas";
+  }, []);
+
   const kpis = useMemo(() => {
     const now = Date.now();
     const porConfirmar = summary.open.filter((a) => a.status === "requested").length;
