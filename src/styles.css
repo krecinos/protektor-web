@@ -271,3 +271,57 @@ button.primary:disabled, .seg button:disabled { opacity: 0.45; cursor: default; 
   .shell-backdrop { display: block; position: fixed; inset: 54px 0 0; z-index: 19; border: 0; padding: 0; background: rgb(0 0 0 / 45%); cursor: pointer; }
   .shell-backdrop:focus-visible { outline: 2px solid var(--series-1); outline-offset: -3px; }
 }
+
+/* Mapa en vivo: conserva el espacio completo disponible dentro del shell. */
+.live-map-page { display: flex; height: calc(100vh - 54px); height: calc(100dvh - 54px); position: relative; overflow: hidden; }
+.live-map-canvas { flex: 1; min-width: 0; position: relative; }
+.live-map-host { width: 100%; height: 100%; }
+.map-vehicles { width: 340px; flex: none; display: flex; flex-direction: column; background: var(--surface-1); border-left: 1px solid var(--border); min-height: 0; }
+.map-list-header { padding: 16px; border-bottom: 1px solid var(--border); }
+.map-list-title { display: flex; align-items: center; justify-content: space-between; }
+.map-list-title h1 { font-size: 18px; margin: 0; }
+.map-list-header p { font-size: 13px; color: var(--text-secondary); margin: 10px 0 16px; }
+.map-list-header label { display: block; font-size: 12px; margin-bottom: 6px; }
+.map-list-header input { width: 100%; padding: 10px; background: var(--page); color: var(--text-primary); border: 1px solid var(--axis); border-radius: 6px; font: inherit; font-size: 16px; }
+.map-filters { margin: 12px 0 0; gap: 6px; }
+.map-filters button[aria-pressed="true"] { background: var(--series-1-soft); border-color: var(--series-1); }
+.map-list { overflow-y: auto; flex: 1; min-height: 0; }
+.map-vehicle { display: flex; flex-direction: column; gap: 5px; width: 100%; padding: 14px 16px; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--text-secondary); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.map-vehicle:hover { background: var(--page); }
+.map-vehicle[aria-pressed="true"] { background: var(--series-1-soft); box-shadow: inset 3px 0 var(--series-1); }
+.map-vehicle-name { display: flex; gap: 8px; align-items: center; color: var(--text-primary); font-size: 14px; max-width: 100%; overflow-wrap: anywhere; }
+.map-dot, .map-badge::before { width: 10px; height: 10px; background: var(--vehicle-color); border-radius: 50%; flex: none; }
+.map-status { display: inline-flex; align-items: center; gap: 6px; color: var(--text-primary); font-weight: 600; font-size: 12px; }
+.map-badge { padding: 5px 8px; border: 1px solid var(--vehicle-color); border-radius: 99px; }
+.map-badge::before { content: ""; }
+.map-location { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.map-vehicle mark { background: #ffe08a; color: #292000; }
+.map-empty { padding: 16px; font-size: 13px; color: var(--text-secondary); }
+.map-notice { position: absolute; top: 12px; left: 12px; right: 12px; margin: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-1); color: var(--text-primary); font-size: 13px; box-shadow: 0 2px 8px #0002; z-index: 1; }
+.map-offline { top: auto; bottom: 30px; }
+.map-panel-toggle, .map-panel-close { display: none; }
+.live-map-info { font: 13px var(--font); line-height: 1.5; overflow-wrap: anywhere; }
+.live-map-info p { margin: 10px 0; }
+.map-info-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.map-info-actions a, .map-info-actions button, .map-panel-toggle, .map-panel-close { font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--axis); border-radius: 6px; background: var(--surface-1); color: var(--text-primary); cursor: pointer; }
+.map-copy-feedback { display: block; margin-top: 8px; }
+.live-map-page :is(button, a, input):focus-visible { outline: 2px solid var(--series-1); outline-offset: -2px; }
+/* La ventana nativa también respeta los tokens del modo oscuro. */
+@media (max-width: 767px) {
+  .map-vehicles { display: none; position: absolute; inset: auto 0 0; width: 100%; height: 72%; z-index: 5; border: 1px solid var(--border); border-radius: 14px 14px 0 0; box-shadow: 0 -4px 20px #0003; }
+  .map-vehicles.is-open { display: flex; }
+  .map-panel-toggle { display: block; position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%); box-shadow: 0 2px 8px #0003; white-space: nowrap; }
+  .map-panel-close { display: block; }
+  .map-offline { bottom: 82px; }
+}
+
+/* Tarjeta del mapa: siempre clara, como Google Maps y el sistema clásico
+   (en modo oscuro teñirla dejaba el botón de cerrar invisible). */
+.live-map-host .gm-style-iw-ch { font: 600 15px var(--font); color: #2d353c; overflow-wrap: anywhere; }
+.live-map-host .gm-style-iw-d { color: #2d353c; color-scheme: light; }
+.live-map-host .map-info-actions a, .live-map-host .map-info-actions button { background: #fff; color: #2d353c; border-color: #c3c2b7; }
+
+/* Google Maps pinta la X de cerrar en blanco si la página está en modo oscuro;
+   la tarjeta es clara, así que se fija oscura (y el texto de la insignia). */
+.live-map-host .gm-style-iw-chr button span { background-color: #2d353c !important; }
+.live-map-host .map-status { color: #2d353c; }
