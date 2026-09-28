@@ -1,3 +1,4 @@
+import AppShell from "../components/AppShell";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api";
 import DetailPanel from "./DetailPanel";
@@ -40,6 +41,7 @@ function LastNote({ count, note }) {
 }
 
 export default function LeadsApp() {
+  const [me, setMe] = useState(null);
   const [tab, setTab] = useState("appointments");
   const [apptFilter, setApptFilter] = useState("open");
   const [leadFilter, setLeadFilter] = useState("all");
@@ -52,6 +54,14 @@ export default function LeadsApp() {
   // registro salga del filtro actual (p. ej. al marcar atendida en "Pendientes").
   const [selected, setSelected] = useState(null);
   const [busyId, setBusyId] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    api.whoami()
+      .then((who) => { if (alive) setMe(who); })
+      .catch(() => { if (alive) setMe(null); });
+    return () => { alive = false; };
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -115,37 +125,41 @@ export default function LeadsApp() {
 
   if (loading) {
     return (
-      <div className="app">
-        <p className="skeleton">Cargando…</p>
-      </div>
+      <AppShell me={me} active="leads">
+        <div className="app">
+          <p className="skeleton">Cargando…</p>
+        </div>
+      </AppShell>
     );
   }
 
   if (error) {
     const status = error instanceof ApiError ? error.status : 0;
     return (
-      <div className="app">
-        <div className="error">
-          <strong>
-            {status === 401
-              ? "Sesión no válida"
-              : status === 403
-                ? "Sección solo para administradores"
-                : "No se pudo cargar la información"}
-          </strong>
-          <p style={{ marginBottom: 0, color: "var(--text-secondary)", fontSize: 14 }}>
-            {status === 401 ? (
-              <>
-                Inicia sesión en <a href="/gui/login">el sistema</a> y vuelve a esta página.
-              </>
-            ) : status === 403 ? (
-              "Tu usuario no tiene permiso para gestionar leads y citas."
-            ) : (
-              error.detail || error.message
-            )}
-          </p>
+      <AppShell me={me} active="leads">
+        <div className="app">
+          <div className="error">
+            <strong>
+              {status === 401
+                ? "Sesión no válida"
+                : status === 403
+                  ? "Sección solo para administradores"
+                  : "No se pudo cargar la información"}
+            </strong>
+            <p style={{ marginBottom: 0, color: "var(--text-secondary)", fontSize: 14 }}>
+              {status === 401 ? (
+                <>
+                  Inicia sesión en <a href="/gui/login">el sistema</a> y vuelve a esta página.
+                </>
+              ) : status === 403 ? (
+                "Tu usuario no tiene permiso para gestionar leads y citas."
+              ) : (
+                error.detail || error.message
+              )}
+            </p>
+          </div>
         </div>
-      </div>
+      </AppShell>
     );
   }
 
@@ -156,181 +170,180 @@ export default function LeadsApp() {
     : null;
 
   return (
-    <div className="app leads">
-      <a className="back" href="/gui/home/index">
-        ← Volver al sistema
-      </a>
-      <header className="topbar">
-        <h1>Leads y Citas</h1>
-        <div className="who">Lo que agenda y captura el asistente del sitio</div>
-      </header>
+    <AppShell me={me} active="leads">
+      <div className="app leads">
+        <header className="topbar">
+          <h1>Leads y Citas</h1>
+          <div className="who">Lo que agenda y captura el asistente del sitio</div>
+        </header>
 
-      <div className="grid-tiles">
-        <Tile label="Citas por confirmar" value={kpis.porConfirmar} foot="solicitadas por el bot" />
-        <Tile label="Confirmadas próximas" value={kpis.proximas} foot="con fecha por venir" />
-        <Tile
-          label="Pendientes con fecha pasada"
-          value={kpis.vencidas}
-          foot={kpis.vencidas ? "márcalas como atendidas o reagéndalas" : "todo al día"}
-        />
-        <Tile label="Leads nuevos" value={summary.leadsNew} foot="sin contactar todavía" />
-      </div>
+        <div className="grid-tiles">
+          <Tile label="Citas por confirmar" value={kpis.porConfirmar} foot="solicitadas por el bot" />
+          <Tile label="Confirmadas próximas" value={kpis.proximas} foot="con fecha por venir" />
+          <Tile
+            label="Pendientes con fecha pasada"
+            value={kpis.vencidas}
+            foot={kpis.vencidas ? "márcalas como atendidas o reagéndalas" : "todo al día"}
+          />
+          <Tile label="Leads nuevos" value={summary.leadsNew} foot="sin contactar todavía" />
+        </div>
 
-      <div className="tabs" role="tablist">
-        <button
-          role="tab"
-          aria-selected={tab === "appointments"}
-          onClick={() => {
-            setTab("appointments");
-            setSelected(null);
-          }}
-        >
-          Citas
-        </button>
-        <button
-          role="tab"
-          aria-selected={tab === "leads"}
-          onClick={() => {
-            setTab("leads");
-            setSelected(null);
-          }}
-        >
-          Leads
-        </button>
-      </div>
-
-      <div className="toolbar">
-        {(tab === "appointments" ? APPT_FILTERS : LEAD_FILTERS).map((f) => (
+        <div className="tabs" role="tablist">
           <button
-            key={f.key}
-            aria-pressed={(tab === "appointments" ? apptFilter : leadFilter) === f.key}
+            role="tab"
+            aria-selected={tab === "appointments"}
             onClick={() => {
-              (tab === "appointments" ? setApptFilter : setLeadFilter)(f.key);
+              setTab("appointments");
               setSelected(null);
             }}
           >
-            {f.label}
+            Citas
           </button>
-        ))}
-        <span className="muted small">{rows.length} registro{rows.length === 1 ? "" : "s"}</span>
-      </div>
-
-      <div className={`split ${selectedItem ? "with-panel" : ""}`}>
-        <div className="card table-card">
-          {rows.length === 0 ? (
-            <p className="muted small" style={{ margin: 0 }}>
-              No hay registros con este filtro.
-            </p>
-          ) : tab === "appointments" ? (
-            <div className="table-scroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th className="check">Atendida</th>
-                    <th>Fecha</th>
-                    <th>Cliente</th>
-                    <th>Contacto</th>
-                    <th>Detalle</th>
-                    <th>Estado</th>
-                    <th>Seguimiento</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {appts.map((a) => (
-                    <tr
-                      key={a.id}
-                      className={`clickable ${selected?.id === a.id && selected.kind === "appointment" ? "sel" : ""}`}
-                      onClick={() => setSelected({ kind: "appointment", id: a.id, snapshot: a })}
-                    >
-                      <td className="check" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          aria-label={`Marcar la cita de ${a.name} como atendida`}
-                          checked={a.status === "done"}
-                          disabled={busyId === a.id || a.status === "cancelled"}
-                          onChange={() => toggleDone(a)}
-                        />
-                      </td>
-                      <td className="strong nowrap">
-                        {fmtDate(a.requested_at) ?? <span className="muted">Por definir</span>}
-                      </td>
-                      <td>
-                        <div className="strong-inline">{a.name}</div>
-                        <div className="muted small">
-                          {a.kind === "cliente" ? "Cliente" : "Prospecto"}
-                          {a.company ? ` · ${a.company}` : ""}
-                        </div>
-                      </td>
-                      <td>
-                        <ContactLine phone={a.phone} email={a.email} />
-                      </td>
-                      <td className="clip-cell" data-label="Detalle">{a.topic || "—"}</td>
-                      <td className="nowrap">
-                        <StatusBadge status={a.status} map={APPT_STATUS} />
-                      </td>
-                      <td className="clip-cell" data-label="Seguimiento">
-                        <LastNote count={a.followups} note={a.last_note} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="table-scroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Recibido</th>
-                    <th>Nombre</th>
-                    <th>Contacto</th>
-                    <th>Flota</th>
-                    <th>Estado</th>
-                    <th>Seguimiento</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leads.map((l) => (
-                    <tr
-                      key={l.id}
-                      className={`clickable ${selected?.id === l.id && selected.kind === "lead" ? "sel" : ""}`}
-                      onClick={() => setSelected({ kind: "lead", id: l.id, snapshot: l })}
-                    >
-                      <td className="nowrap">{fmtDate(l.created_at, { withDay: false })}</td>
-                      <td>
-                        <div className="strong-inline">{l.name}</div>
-                        <div className="muted small">{l.company || ""}</div>
-                      </td>
-                      <td>
-                        <ContactLine phone={l.phone} email={l.email} />
-                      </td>
-                      <td data-label="Flota">{l.fleet_size || "—"}</td>
-                      <td className="nowrap">
-                        <StatusBadge status={l.status} map={LEAD_STATUS} />
-                      </td>
-                      <td className="clip-cell" data-label="Seguimiento">
-                        <LastNote count={l.followups} note={l.last_note} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <button
+            role="tab"
+            aria-selected={tab === "leads"}
+            onClick={() => {
+              setTab("leads");
+              setSelected(null);
+            }}
+          >
+            Leads
+          </button>
         </div>
 
-        {selectedItem ? (
-          <DetailPanel
-            kind={selected.kind}
-            item={selectedItem}
-            onClose={() => setSelected(null)}
-            onChanged={(updated) => {
-              setSelected((cur) => cur && { ...cur, snapshot: { ...cur.snapshot, ...updated } });
-              load();
-            }}
-          />
-        ) : null}
+        <div className="toolbar">
+          {(tab === "appointments" ? APPT_FILTERS : LEAD_FILTERS).map((f) => (
+            <button
+              key={f.key}
+              aria-pressed={(tab === "appointments" ? apptFilter : leadFilter) === f.key}
+              onClick={() => {
+                (tab === "appointments" ? setApptFilter : setLeadFilter)(f.key);
+                setSelected(null);
+              }}
+            >
+              {f.label}
+            </button>
+          ))}
+          <span className="muted small">{rows.length} registro{rows.length === 1 ? "" : "s"}</span>
+        </div>
+
+        <div className={`split ${selectedItem ? "with-panel" : ""}`}>
+          <div className="card table-card">
+            {rows.length === 0 ? (
+              <p className="muted small" style={{ margin: 0 }}>
+                No hay registros con este filtro.
+              </p>
+            ) : tab === "appointments" ? (
+              <div className="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th className="check">Atendida</th>
+                      <th>Fecha</th>
+                      <th>Cliente</th>
+                      <th>Contacto</th>
+                      <th>Detalle</th>
+                      <th>Estado</th>
+                      <th>Seguimiento</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {appts.map((a) => (
+                      <tr
+                        key={a.id}
+                        className={`clickable ${selected?.id === a.id && selected.kind === "appointment" ? "sel" : ""}`}
+                        onClick={() => setSelected({ kind: "appointment", id: a.id, snapshot: a })}
+                      >
+                        <td className="check" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            aria-label={`Marcar la cita de ${a.name} como atendida`}
+                            checked={a.status === "done"}
+                            disabled={busyId === a.id || a.status === "cancelled"}
+                            onChange={() => toggleDone(a)}
+                          />
+                        </td>
+                        <td className="strong nowrap">
+                          {fmtDate(a.requested_at) ?? <span className="muted">Por definir</span>}
+                        </td>
+                        <td>
+                          <div className="strong-inline">{a.name}</div>
+                          <div className="muted small">
+                            {a.kind === "cliente" ? "Cliente" : "Prospecto"}
+                            {a.company ? ` · ${a.company}` : ""}
+                          </div>
+                        </td>
+                        <td>
+                          <ContactLine phone={a.phone} email={a.email} />
+                        </td>
+                        <td className="clip-cell" data-label="Detalle">{a.topic || "—"}</td>
+                        <td className="nowrap">
+                          <StatusBadge status={a.status} map={APPT_STATUS} />
+                        </td>
+                        <td className="clip-cell" data-label="Seguimiento">
+                          <LastNote count={a.followups} note={a.last_note} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Recibido</th>
+                      <th>Nombre</th>
+                      <th>Contacto</th>
+                      <th>Flota</th>
+                      <th>Estado</th>
+                      <th>Seguimiento</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leads.map((l) => (
+                      <tr
+                        key={l.id}
+                        className={`clickable ${selected?.id === l.id && selected.kind === "lead" ? "sel" : ""}`}
+                        onClick={() => setSelected({ kind: "lead", id: l.id, snapshot: l })}
+                      >
+                        <td className="nowrap">{fmtDate(l.created_at, { withDay: false })}</td>
+                        <td>
+                          <div className="strong-inline">{l.name}</div>
+                          <div className="muted small">{l.company || ""}</div>
+                        </td>
+                        <td>
+                          <ContactLine phone={l.phone} email={l.email} />
+                        </td>
+                        <td data-label="Flota">{l.fleet_size || "—"}</td>
+                        <td className="nowrap">
+                          <StatusBadge status={l.status} map={LEAD_STATUS} />
+                        </td>
+                        <td className="clip-cell" data-label="Seguimiento">
+                          <LastNote count={l.followups} note={l.last_note} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {selectedItem ? (
+            <DetailPanel
+              kind={selected.kind}
+              item={selectedItem}
+              onClose={() => setSelected(null)}
+              onChanged={(updated) => {
+                setSelected((cur) => cur && { ...cur, snapshot: { ...cur.snapshot, ...updated } });
+                load();
+              }}
+            />
+          ) : null}
+        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

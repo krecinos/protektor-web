@@ -85,7 +85,7 @@ export default function FleetTable({ devices, positions, maintenance, onSelect, 
         </table>
       </div>
       <p className="muted" style={{ fontSize: 12, marginBottom: 0 }}>
-        Tocá una fila para ver su kilometraje diario.
+        Toca una fila para ver su kilometraje diario.
       </p>
     </div>
   );

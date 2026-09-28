@@ -28,7 +28,7 @@
   --success-text: #006300;
 
   --radius: 10px;
-  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font: "Open Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -229,4 +229,45 @@ button.primary:disabled, .seg button:disabled { opacity: 0.45; cursor: default; 
   .leads .table-card td[data-label]::before { content: attr(data-label) " · "; color: var(--text-muted); font-size: 11px; }
   .leads .clip { max-width: 70vw; }
   .leads .panel { position: static; }
+}
+
+/* Estructura compartida de las pantallas v2. */
+.shell-header {
+  position: fixed; inset: 0 0 auto; height: 54px; z-index: 30;
+  display: flex; align-items: center; gap: 16px; padding: 0 20px;
+  /* Siempre blanca, como en el sistema clásico (el logo es oscuro y en modo
+     oscuro no se veía); el menú lateral, igual, siempre es oscuro. */
+  background: #fff; color: #2d353c;
+  border-bottom: 1px solid rgb(0 0 0 / 8%); box-shadow: 0 2px 5px rgb(0 0 0 / 10%);
+  color-scheme: light;
+}
+.shell-brand { display: flex; align-items: center; flex: none; }
+.shell-brand img { display: block; height: 34px; width: auto; max-width: 180px; object-fit: contain; }
+.shell-account { margin-left: auto; min-width: 0; display: flex; align-items: center; gap: 20px; font-size: 13px; }
+.shell-identity { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shell-classic { color: inherit; white-space: nowrap; }
+.shell-sidebar { position: fixed; inset: 54px auto 0 0; width: 220px; z-index: 20; overflow-y: auto; background: #2d353c; color: #a8acb1; }
+.shell-section { padding: 20px 20px 10px; font-size: 11px; }
+.shell-link { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: #a8acb1; text-decoration: none; font-size: 13px; }
+.shell-link:hover { background: #232a30; color: #fff; }
+.shell-link[aria-current="page"] { background: #348fe2; color: #fff; }
+.shell-icon { width: 16px; height: 16px; flex: none; }
+.shell-content { margin-left: 220px; padding-top: 54px; min-width: 0; min-height: 100vh; }
+.shell-content .panel { top: 70px; }
+.shell-toggle { display: none; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; flex: none; background: transparent; color: inherit; border: 1px solid rgb(0 0 0 / 15%); border-radius: 4px; cursor: pointer; }
+.shell-header a:focus-visible, .shell-toggle:focus-visible { outline: 2px solid var(--series-1); outline-offset: 3px; }
+.shell-link:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
+.shell-backdrop { display: none; }
+
+@media (max-width: 767px) {
+  .shell-header { gap: 8px; padding: 0 10px; }
+  .shell-toggle { display: inline-flex; }
+  .shell-brand img { max-width: 120px; }
+  .shell-account { flex-direction: column; align-items: flex-end; gap: 2px; font-size: 11px; }
+  .shell-identity { max-width: 100%; }
+  .shell-sidebar { transform: translateX(-100%); visibility: hidden; }
+  .shell-open .shell-sidebar { transform: translateX(0); visibility: visible; }
+  .shell-content { margin-left: 0; }
+  .shell-backdrop { display: block; position: fixed; inset: 54px 0 0; z-index: 19; border: 0; padding: 0; background: rgb(0 0 0 / 45%); cursor: pointer; }
+  .shell-backdrop:focus-visible { outline: 2px solid var(--series-1); outline-offset: -3px; }
 }

@@ -179,7 +179,7 @@ export default function DistanceChart({ data, title, subtitle }) {
       <div className="muted" style={{ fontSize: 12, minHeight: 18, marginTop: 4 }}>
         {hover
           ? `${fmtDay(hover.day)} · ${Math.round(hover.km)} km · acumulado ${Math.round(hover.cumulative_km)} km`
-          : "Pasá el cursor sobre la línea para ver el detalle diario."}
+          : "Pasa el cursor sobre la línea para ver el detalle diario."}
       </div>
     </div>
   );

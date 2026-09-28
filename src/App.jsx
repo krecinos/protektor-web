@@ -1,3 +1,4 @@
+import AppShell from "./components/AppShell";
 import { useEffect, useMemo, useState } from "react";
 import { api, ApiError, dateRange, fillMissingDays } from "./api";
 import DistanceChart from "./components/DistanceChart";
@@ -92,29 +93,33 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="app">
-        <p className="skeleton">Cargando tablero…</p>
-      </div>
+      <AppShell me={me} active="fleet">
+        <div className="app">
+          <p className="skeleton">Cargando tablero…</p>
+        </div>
+      </AppShell>
     );
   }
 
   if (error) {
     const noSession = error instanceof ApiError && error.status === 401;
     return (
-      <div className="app">
-        <div className="error">
-          <strong>{noSession ? "Sesión no válida" : "No se pudo cargar el tablero"}</strong>
-          <p style={{ marginBottom: 0, color: "var(--text-secondary)", fontSize: 14 }}>
-            {noSession ? (
-              <>
-                Iniciá sesión en <a href="/gui/login">el sistema</a> y volvé a esta página.
-              </>
-            ) : (
-              error.detail || error.message
-            )}
-          </p>
+      <AppShell me={me} active="fleet">
+        <div className="app">
+          <div className="error">
+            <strong>{noSession ? "Sesión no válida" : "No se pudo cargar el tablero"}</strong>
+            <p style={{ marginBottom: 0, color: "var(--text-secondary)", fontSize: 14 }}>
+              {noSession ? (
+                <>
+                  Inicia sesión en <a href="/gui/login">el sistema</a> y vuelve a esta página.
+                </>
+              ) : (
+                error.detail || error.message
+              )}
+            </p>
+          </div>
         </div>
-      </div>
+      </AppShell>
     );
   }
 
@@ -122,62 +127,64 @@ export default function App() {
   const selectedName = selected?.friendly_name?.trim() || selected?.name?.trim() || "vehículo";
 
   return (
-    <div className="app">
-      <header className="topbar">
-        <h1>Tablero de flota</h1>
-        <div className="who">
-          {me?.company_name ?? "—"}
-          {me?.role_name ? ` · ${me.role_name}` : ""}
+    <AppShell me={me} active="fleet">
+      <div className="app">
+        <header className="topbar">
+          <h1>Tablero de flota</h1>
+          <div className="who">
+            {me?.company_name ?? "—"}
+            {me?.role_name ? ` · ${me.role_name}` : ""}
+          </div>
+        </header>
+
+        <div className="grid-tiles">
+          <Tile label="Vehículos activos" value={kpis.active} foot={`${devices.length} en total`} />
+          <Tile
+            label="Reportando (24 h)"
+            value={kpis.reporting}
+            foot={
+              kpis.active - kpis.reporting > 0
+                ? `${kpis.active - kpis.reporting} sin reportar`
+                : "toda la flota al día"
+            }
+          />
+          <Tile label="Mantenimientos vencidos" value={kpis.overdue} foot="vehículos con servicio pendiente" />
+          <Tile
+            label={`Kilometraje (${days} d)`}
+            value={Math.round(kpis.totalKm).toLocaleString("es-GT")}
+            unit="km"
+            foot={selected ? selectedName : "—"}
+          />
         </div>
-      </header>
 
-      <div className="grid-tiles">
-        <Tile label="Vehículos activos" value={kpis.active} foot={`${devices.length} en total`} />
-        <Tile
-          label="Reportando (24 h)"
-          value={kpis.reporting}
-          foot={
-            kpis.active - kpis.reporting > 0
-              ? `${kpis.active - kpis.reporting} sin reportar`
-              : "toda la flota al día"
-          }
+        {/* Filtros en una fila, arriba de los gráficos. */}
+        <div className="toolbar">
+          {RANGES.map((r) => (
+            <button
+              key={r.days}
+              aria-pressed={days === r.days}
+              onClick={() => setDays(r.days)}
+            >
+              {r.label}
+            </button>
+          ))}
+          {distLoading ? <span className="muted" style={{ fontSize: 12 }}>actualizando…</span> : null}
+        </div>
+
+        <DistanceChart
+          data={distance}
+          title="Kilometraje diario"
+          subtitle={selected ? selectedName : undefined}
         />
-        <Tile label="Mantenimientos vencidos" value={kpis.overdue} foot="vehículos con servicio pendiente" />
-        <Tile
-          label={`Kilometraje (${days} d)`}
-          value={Math.round(kpis.totalKm).toLocaleString("es-GT")}
-          unit="km"
-          foot={selected ? selectedName : "—"}
+
+        <FleetTable
+          devices={devices}
+          positions={positions}
+          maintenance={maintenance}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
         />
       </div>
-
-      {/* Filtros en una fila, arriba de los gráficos. */}
-      <div className="toolbar">
-        {RANGES.map((r) => (
-          <button
-            key={r.days}
-            aria-pressed={days === r.days}
-            onClick={() => setDays(r.days)}
-          >
-            {r.label}
-          </button>
-        ))}
-        {distLoading ? <span className="muted" style={{ fontSize: 12 }}>actualizando…</span> : null}
-      </div>
-
-      <DistanceChart
-        data={distance}
-        title="Kilometraje diario"
-        subtitle={selected ? selectedName : undefined}
-      />
-
-      <FleetTable
-        devices={devices}
-        positions={positions}
-        maintenance={maintenance}
-        selectedId={selectedId}
-        onSelect={setSelectedId}
-      />
-    </div>
+    </AppShell>
   );
 }
