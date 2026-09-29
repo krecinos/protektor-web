@@ -476,3 +476,10 @@ td.check input { accent-color: var(--action-primary); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+
+/* El avatar comparte el color de estado con el pin del mapa. */
+.map-vehicle-avatar { width: 28px; height: 28px; flex: none; object-fit: contain; border: 2px solid var(--vehicle-color); border-radius: 50%; background: var(--on-primary); }
+.map-vehicle-avatar.is-generic { background: var(--vehicle-color); }
+.map-vehicle .map-badge { align-self: flex-start; }
+.map-battery-critical { color: var(--status-critical); font-weight: 600; }
+.map-battery-warning { color: var(--status-warning); font-weight: 600; }

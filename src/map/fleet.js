@@ -28,6 +28,15 @@ export function reportLabel(time, now) {
   return `${ageLabel(time, now)} · ${pad(date.getUTCDate())}/${pad(date.getUTCMonth() + 1)}/${date.getUTCFullYear()} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
 }
 
+export function batteryClass(battery) {
+  return battery < 20 ? "map-battery-critical" : battery < 50 ? "map-battery-warning" : "";
+}
+
+export function coverageLabel(vehicle, now) {
+  return Number.isFinite(vehicle.time) && now - vehicle.time > HOUR
+    ? `Sin cobertura · sin reportar ${ageLabel(vehicle.time, now)}` : "";
+}
+
 export function joinFleet(devices, positions, now) {
   const byId = new Map(positions.map((p) => [String(p.device_id), p]));
   return devices.map((device) => {
@@ -38,8 +47,11 @@ export function joinFleet(devices, positions, now) {
     const lng = Number(position?.longitude);
     const valid = position && [position.latitude, position.longitude].every((v) => v != null && String(v).trim() !== "") && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
     return {
-      id: String(device.id), name: device.friendly_name?.trim() || device.name || "Vehículo",
+      id: String(device.id), name: device.friendly_name?.trim() || device.name || position?.name || "Vehículo",
       plate: device.v_plate || position?.v_plate || "Sin placa", state, time,
+      icon: position?.icon || "",
+      battery: Number.isFinite(Number(device.battery)) && Number(device.battery) > 0 ? Number(device.battery) : null,
+      description: [device.v_brand, device.v_model, device.v_year].filter((value) => value != null && String(value).trim()).join(" "),
       point: valid ? { lat, lng } : null,
       speed: position?.speed != null && Number.isFinite(Number(position.speed)) ? `${Math.round(Number(position.speed))} km/h` : "Sin velocidad",
       location: position?.location || "Sin ubicación",

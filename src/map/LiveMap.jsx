@@ -2,8 +2,20 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import AppShell from "../components/AppShell";
 import { api } from "../api";
 import { loadGoogleMaps } from "../lib/googleMaps";
-import { ageLabel, joinFleet, STATES } from "./fleet";
+import { ageLabel, batteryClass, coverageLabel, joinFleet, STATES } from "./fleet";
 import { infoContent } from "./infoWindow";
+import { fallbackPin, genericVehicleIcon, markerIcon, vehicleImage } from "./markerIcon";
+
+function VehicleAvatar({ icon }) {
+  const [image, setImage] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    setImage(null);
+    vehicleImage(icon).then((url) => { if (alive) setImage(url); });
+    return () => { alive = false; };
+  }, [icon]);
+  return <img className={`map-vehicle-avatar${image ? "" : " is-generic"}`} src={image || genericVehicleIcon()} alt="" width="28" height="28" onError={() => setImage(null)} />;
+}
 
 function Highlight({ text, query }) {
   const index = text.toLocaleLowerCase("es").indexOf(query.toLocaleLowerCase("es"));
@@ -79,7 +91,7 @@ export default function LiveMap() {
     if (panelOpen) panelToggle.current?.focus();
     if (!vehicle?.point || !mapRef.current || !info.current) return;
     mapRef.current.panTo(vehicle.point);
-    if (mapRef.current.getZoom() < 15) mapRef.current.setZoom(15);
+    if (mapRef.current.getZoom() < 16) mapRef.current.setZoom(16);
     info.current.setOptions({ headerContent: document.createTextNode(vehicle.name), content: infoContent(vehicle, Date.now()) });
     info.current.open({ map: mapRef.current, anchor: markers.current.get(id), shouldFocus: false });
   }
@@ -105,6 +117,7 @@ export default function LiveMap() {
 
   useEffect(() => {
     if (!maps || !mapRef.current) return;
+    let active = true;
     const validIds = new Set();
     const bounds = new maps.LatLngBounds();
     for (const vehicle of fleet) {
@@ -116,7 +129,23 @@ export default function LiveMap() {
         marker.addListener("click", () => selectRef.current(vehicle.id));
         markers.current.set(vehicle.id, marker);
       }
-      marker.setOptions({ position: vehicle.point, title: `${vehicle.name} · ${vehicle.plate}`, icon: { path: maps.SymbolPath.CIRCLE, scale: 7, fillColor: STATES[vehicle.state].color, fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2 } });
+      const color = STATES[vehicle.state].color;
+      const isSelected = vehicle.id === selectedId;
+      const width = isSelected ? 52 : 44;
+      const height = isSelected ? 62 : 52;
+      const asIcon = (url) => ({ url, scaledSize: new maps.Size(width, height), anchor: new maps.Point(width / 2, height) });
+      const key = JSON.stringify([vehicle.icon, color]);
+      if (marker.vehicleIconKey !== key) {
+        marker.vehicleIconKey = key;
+        marker.vehicleIconUrl = fallbackPin(color);
+      }
+      marker.setOptions({ position: vehicle.point, title: `${vehicle.name} · ${vehicle.plate}`, zIndex: isSelected ? 1000000 : undefined, icon: asIcon(marker.vehicleIconUrl) });
+      markerIcon(vehicle.icon, color).then((url) => {
+        // Una carga anterior no debe sobrescribir el estado ni la selección actuales.
+        if (!active || markers.current.get(vehicle.id) !== marker) return;
+        marker.vehicleIconUrl = url;
+        marker.setIcon(asIcon(url));
+      });
       bounds.extend(vehicle.point);
     }
     for (const [id, marker] of markers.current) {
@@ -127,6 +156,7 @@ export default function LiveMap() {
     if (selected?.point) {
       info.current.setOptions({ headerContent: document.createTextNode(selected.name), content: infoContent(selected, now) });
     } else { info.current.close(); }
+    return () => { active = false; };
   }, [fleet, maps, loading, selected, now]);
 
   useEffect(() => {
@@ -154,9 +184,12 @@ export default function LiveMap() {
             {!fleet.some((v) => v.point) && <p className="map-empty">No hay vehículos con posición</p>}
             {fleet.length > 0 && !filtered.length && <p className="map-empty">No hay vehículos que coincidan con tu búsqueda.</p>}
             {filtered.map((vehicle) => <button key={vehicle.id} className="map-vehicle" aria-pressed={selectedId === vehicle.id} onClick={() => select(vehicle.id)} style={{ "--vehicle-color": STATES[vehicle.state].color }}>
-              <span className="map-vehicle-name"><span className="map-dot" /><strong><Highlight text={vehicle.name} query={search} /></strong></span>
+              <span className="map-vehicle-name"><VehicleAvatar icon={vehicle.icon} /><strong><Highlight text={vehicle.name} query={search} /></strong></span>
               <span className="map-vehicle-plate"><Highlight text={vehicle.plate} query={search} /></span>
-              <span className="map-status">{STATES[vehicle.state].label}</span>
+              {vehicle.description && <span>{vehicle.description}</span>}
+              <span className="map-status map-badge">{STATES[vehicle.state].label}</span>
+              {vehicle.battery != null && <span className={batteryClass(vehicle.battery)}>Batería {vehicle.battery}%</span>}
+              {coverageLabel(vehicle, now) && <span>{coverageLabel(vehicle, now)}</span>}
               <span>{ageLabel(vehicle.time, now)} · {vehicle.speed}</span>
               <span className="map-location" title={vehicle.location}>{vehicle.location}</span>
               {!vehicle.point && <span>Sin posición válida</span>}

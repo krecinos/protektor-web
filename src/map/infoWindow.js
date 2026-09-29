@@ -1,4 +1,4 @@
-import { reportLabel, STATES } from "./fleet";
+import { batteryClass, coverageLabel, reportLabel, STATES } from "./fleet";
 
 function element(tag, text, className) {
   const node = document.createElement(tag);
@@ -31,6 +31,10 @@ export function infoContent(vehicle, now) {
   const badge = element("span", state.label, "map-status map-badge");
   badge.style.setProperty("--vehicle-color", state.color);
   content.append(badge);
+  if (vehicle.description) content.append(element("p", vehicle.description));
+  if (vehicle.battery != null) content.append(element("p", `Batería ${vehicle.battery}%`, batteryClass(vehicle.battery)));
+  const coverage = coverageLabel(vehicle, now);
+  if (coverage) content.append(element("p", coverage));
   for (const [label, value] of [["Velocidad", vehicle.speed], ["Último reporte", reportLabel(vehicle.time, now)], ["Ubicación", vehicle.location], ["Coordenadas", `${vehicle.point.lat}, ${vehicle.point.lng}`]]) {
     const row = element("p");
     row.append(element("strong", `${label}: `), document.createTextNode(value));
