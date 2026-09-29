@@ -134,7 +134,7 @@ export default function LiveMap() {
   }, [panelOpen]);
 
   return <AppShell me={me} active="map">
-    {unauthorized ? <div className="app"><div className="error">Inicia sesión en <a href="/gui/login">el sistema</a></div></div> : loading ? <div className="app"><p>Cargando mapa…</p></div> :
+    {unauthorized ? <div className="app"><div className="error">Inicia sesión en <a href="/gui/login">el sistema</a></div></div> : loading ? <div className="app"><p className="skeleton">Cargando mapa…</p></div> :
       <div className="live-map-page">
         <section className="live-map-canvas" aria-label="Mapa en vivo">
           <div ref={host} className="live-map-host" />
