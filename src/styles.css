@@ -359,11 +359,17 @@ button.primary:disabled, .seg button:disabled { opacity: 0.45; cursor: default; 
 .map-notice { position: absolute; top: 12px; left: 12px; right: 12px; margin: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-1); color: var(--text-primary); font-size: 13px; box-shadow: var(--shadow-raised); z-index: 1; }
 .map-offline { top: auto; bottom: 30px; }
 .map-panel-toggle, .map-panel-close { display: none; }
-.live-map-info { font: 13px var(--font); line-height: 1.5; overflow-wrap: anywhere; }
-.live-map-info p { margin: 10px 0; }
-.map-info-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.live-map-info { font: 12px var(--font); line-height: 1.35; overflow-wrap: anywhere; min-width: 0; }
+.live-map-info p { margin: 5px 0; }
+.map-info-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.live-map-info .map-badge { padding: 3px 6px; }
+.map-info-location { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.map-info-secondary { font-size: 12px; color: #5b6675; }
+.map-info-actions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
 .map-info-actions a, .map-info-actions button, .map-panel-toggle, .map-panel-close { font: inherit; font-size: 13px; padding: 10px 12px; border: 1px solid var(--axis); border-radius: 6px; background: var(--surface-1); color: var(--text-primary); cursor: pointer; }
-.map-copy-feedback { display: block; margin-top: 8px; }
+.live-map-info .map-info-actions :is(a, button) { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; min-width: 0; max-width: 100%; padding: 5px 8px; font-size: 12px; text-decoration: none; box-sizing: border-box; }
+.map-copy-feedback { display: block; margin-top: 4px; }
+.map-copy-feedback:empty { display: none; }
 .live-map-page :is(button, a, input):focus-visible { outline: 2px solid var(--series-1); outline-offset: -2px; }
 /* El panel móvil comparte las superficies del tema. */
 @media (max-width: 767px) {
@@ -376,7 +382,7 @@ button.primary:disabled, .seg button:disabled { opacity: 0.45; cursor: default; 
 
 /* Tarjeta del mapa: siempre clara, como Google Maps y el sistema clásico
    (en modo oscuro teñirla dejaba el botón de cerrar invisible). */
-.live-map-host .gm-style-iw-ch { font: 600 15px var(--font); color: #2d353c; overflow-wrap: anywhere; }
+.live-map-host .gm-style-iw-ch { font: 600 13px var(--font); color: #2d353c; overflow-wrap: anywhere; }
 .live-map-host .gm-style-iw-d { color: #2d353c; color-scheme: light; }
 .live-map-host .map-info-actions a, .live-map-host .map-info-actions button { background: #fff; color: #2d353c; border-color: #c3c2b7; }
 
@@ -464,8 +470,6 @@ td.check input { accent-color: var(--action-primary); }
 }
 
 /* El avatar comparte el color de estado con el pin del mapa. */
-.map-vehicle-avatar { width: 28px; height: 28px; flex: none; object-fit: contain; border: 2px solid var(--vehicle-color); border-radius: 50%; background: var(--on-primary); }
-.map-vehicle-avatar.is-generic { background: var(--vehicle-color); }
 .map-vehicle .map-badge { align-self: flex-start; }
 .map-battery-critical { color: var(--status-critical); font-weight: 600; }
 .map-battery-warning { color: var(--status-warning); font-weight: 600; }
@@ -538,4 +542,15 @@ td.check input { accent-color: var(--action-primary); }
   .app:not(.leads) td { border: 0; padding: 4px 0; text-align: left; overflow-wrap: anywhere; }
   .app:not(.leads) tbody tr:active td { background: var(--series-1-soft); }
   .app:not(.leads) tbody tr { -webkit-tap-highlight-color: transparent; }
+}
+
+/* El ancho incluye el borde y el botón de cierre, también en teléfonos. */
+.live-map-host .gm-style-iw-c { width: 280px; max-width: min(280px, calc(100vw - 32px)) !important; padding: 8px !important; box-sizing: border-box; }
+.live-map-host .gm-style-iw-chr { align-items: center; }
+.live-map-host .gm-style-iw-ch { min-width: 0; padding: 0; line-height: 1.3; }
+.live-map-host .gm-style-iw-chr button { flex: none; width: 38px !important; height: 38px !important; margin: 0 !important; display: flex !important; align-items: center; justify-content: center; }
+.live-map-host .gm-style-iw-chr button span { margin: 0 !important; }
+.live-map-host .gm-style-iw-d { overflow-x: hidden !important; padding: 0 !important; }
+@media (max-width: 767px) {
+  .live-map-host .gm-style-iw-c { width: min(260px, 78vw); max-width: min(260px, 78vw) !important; }
 }

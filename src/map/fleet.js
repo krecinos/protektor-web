@@ -25,7 +25,7 @@ export function reportLabel(time, now) {
   if (!Number.isFinite(time)) return "Sin reporte";
   const date = new Date(time - 6 * HOUR);
   const pad = (n) => String(n).padStart(2, "0");
-  return `${ageLabel(time, now)} · ${pad(date.getUTCDate())}/${pad(date.getUTCMonth() + 1)}/${date.getUTCFullYear()} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
+  return `${ageLabel(time, now)} · ${pad(date.getUTCDate())}/${pad(date.getUTCMonth() + 1)}/${String(date.getUTCFullYear()).slice(-2)} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
 }
 
 export function batteryClass(battery) {
@@ -49,7 +49,6 @@ export function joinFleet(devices, positions, now) {
     return {
       id: String(device.id), name: device.friendly_name?.trim() || device.name || position?.name || "Vehículo",
       plate: device.v_plate || position?.v_plate || "Sin placa", state, time,
-      icon: position?.icon || "",
       battery: Number.isFinite(Number(device.battery)) && Number(device.battery) > 0 ? Number(device.battery) : null,
       description: [device.v_brand, device.v_model, device.v_year].filter((value) => value != null && String(value).trim()).join(" "),
       point: valid ? { lat, lng } : null,

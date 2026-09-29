@@ -30,16 +30,17 @@ export function infoContent(vehicle, now) {
   const state = STATES[vehicle.state];
   const badge = element("span", state.label, "map-status map-badge");
   badge.style.setProperty("--vehicle-color", state.color);
-  content.append(badge);
-  if (vehicle.description) content.append(element("p", vehicle.description));
+  const summary = element("div", "", "map-info-summary");
+  summary.append(badge, element("span", vehicle.speed));
+  content.append(summary);
+  content.append(element("p", `Último reporte: ${reportLabel(vehicle.time, now)}`));
+  const location = element("p", vehicle.location, "map-info-location");
+  location.title = vehicle.location;
+  content.append(location, element("p", `${vehicle.point.lat}, ${vehicle.point.lng}`, "map-info-secondary"));
   if (vehicle.battery != null) content.append(element("p", `Batería ${vehicle.battery}%`, batteryClass(vehicle.battery)));
+  if (vehicle.description) content.append(element("p", vehicle.description, "map-info-secondary"));
   const coverage = coverageLabel(vehicle, now);
-  if (coverage) content.append(element("p", coverage));
-  for (const [label, value] of [["Velocidad", vehicle.speed], ["Último reporte", reportLabel(vehicle.time, now)], ["Ubicación", vehicle.location], ["Coordenadas", `${vehicle.point.lat}, ${vehicle.point.lng}`]]) {
-    const row = element("p");
-    row.append(element("strong", `${label}: `), document.createTextNode(value));
-    content.append(row);
-  }
+  if (coverage) content.append(element("p", coverage, "map-info-secondary"));
   const actions = element("div", "", "map-info-actions");
   const coords = `${vehicle.point.lat},${vehicle.point.lng}`;
   for (const [label, url] of [["Waze", `https://waze.com/ul?ll=${coords}&navigate=yes`], ["Google Maps", `https://www.google.com/maps/search/?api=1&query=${coords}`]]) {
@@ -49,7 +50,7 @@ export function infoContent(vehicle, now) {
     link.rel = "noopener";
     actions.append(link);
   }
-  const copy = element("button", "Copiar coordenadas");
+  const copy = element("button", "Copiar");
   copy.type = "button";
   const feedback = element("span", "", "map-copy-feedback");
   feedback.setAttribute("role", "status");
