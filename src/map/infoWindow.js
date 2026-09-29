@@ -33,6 +33,7 @@ export function infoContent(vehicle, now) {
   const summary = element("div", "", "map-info-summary");
   summary.append(badge, element("span", vehicle.speed));
   content.append(summary);
+  if (vehicle.ignition === 1 || vehicle.ignition === 0) content.append(element("p", `Motor: ${vehicle.ignition === 1 ? "Encendido" : "Apagado"}`));
   content.append(element("p", `Último reporte: ${reportLabel(vehicle.time, now)}`));
   const location = element("p", vehicle.location, "map-info-location");
   location.title = vehicle.location;

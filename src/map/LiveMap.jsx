@@ -127,7 +127,7 @@ export default function LiveMap() {
         position: vehicle.point,
         title: `${vehicle.name} · ${vehicle.plate}`,
         zIndex: isSelected ? 1000000 : undefined,
-        icon: { url: markerIcon(color, isSelected), scaledSize: new maps.Size(36, 36), anchor: new maps.Point(18, 18) },
+        icon: { url: markerIcon(color, isSelected), scaledSize: new maps.Size(34, 42), anchor: new maps.Point(17, 39) },
       });
       bounds.extend(vehicle.point);
     }
@@ -164,7 +164,7 @@ export default function LiveMap() {
             <p>{fleet.length - offline} en línea · {offline} fuera de línea</p>
             <label htmlFor="vehicle-search">Buscar por nombre o placa</label>
             <input ref={searchRef} id="vehicle-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nombre o placa" />
-            <div className="toolbar map-filters">{[["all", "Todos"], ["on", "Encendidos"], ["off", "Apagados"], ["offline", "Fuera de línea"]].map(([key, label]) => <button key={key} aria-pressed={filter === key} onClick={() => setFilter(key)}>{label}</button>)}</div>
+            <div className="toolbar map-filters">{[["all", "Todos"], ["online", "En línea"], ["offline", "Fuera de línea"]].map(([key, label]) => <button key={key} aria-pressed={filter === key} onClick={() => setFilter(key)}>{label}</button>)}</div>
           </div>
           <div className="map-list">
             {!fleet.some((v) => v.point) && <p className="map-empty">No hay vehículos con posición</p>}

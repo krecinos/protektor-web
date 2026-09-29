@@ -1,8 +1,7 @@
 const HOUR = 3600000;
 export const STATES = {
-  on: { label: "Encendido", color: "#0ca30c", order: 0 },
-  off: { label: "Apagado", color: "#8a8f94", order: 1 },
-  offline: { label: "Fuera de línea", color: "#ff5b57", order: 2 },
+  online: { label: "En línea", color: "#0ca30c", order: 0 },
+  offline: { label: "Fuera de línea", color: "#8a8f94", order: 1 },
 };
 
 export function reportTime(value) {
@@ -42,13 +41,14 @@ export function joinFleet(devices, positions, now) {
   return devices.map((device) => {
     const position = byId.get(String(device.id));
     const time = reportTime(position?.date);
-    const state = !Number.isFinite(time) || now - time > HOUR ? "offline" : Number(device.ignition) === 1 ? "on" : "off";
+    const state = Number.isFinite(time) && now - time <= HOUR ? "online" : "offline";
     const lat = Number(position?.latitude);
     const lng = Number(position?.longitude);
     const valid = position && [position.latitude, position.longitude].every((v) => v != null && String(v).trim() !== "") && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
     return {
       id: String(device.id), name: device.friendly_name?.trim() || device.name || position?.name || "Vehículo",
       plate: device.v_plate || position?.v_plate || "Sin placa", state, time,
+      ignition: device.ignition === 1 || device.ignition === 0 ? device.ignition : null,
       battery: Number.isFinite(Number(device.battery)) && Number(device.battery) > 0 ? Number(device.battery) : null,
       description: [device.v_brand, device.v_model, device.v_year].filter((value) => value != null && String(value).trim()).join(" "),
       point: valid ? { lat, lng } : null,
