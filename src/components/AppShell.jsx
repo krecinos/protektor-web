@@ -1,5 +1,3 @@
-import { useEffect, useRef, useState } from "react";
-
 function ShellIcon({ kind }) {
   return (
     <svg className="shell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -13,56 +11,22 @@ function ShellIcon({ kind }) {
 }
 
 export default function AppShell({ me, active, children }) {
-  const [open, setOpen] = useState(false);
-  const toggleRef = useRef(null);
-  const navRef = useRef(null);
-
-  function closeMenu() {
-    setOpen(false);
-    toggleRef.current?.focus();
-  }
-
-  useEffect(() => {
-    if (!open) return;
-    navRef.current?.querySelector('a[aria-current="page"], a')?.focus();
-    function onKeyDown(event) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeMenu();
-      }
-    }
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", onKeyDown);
-    const desktop = window.matchMedia("(min-width: 768px)");
-    const onResize = () => { if (desktop.matches) setOpen(false); };
-    desktop.addEventListener("change", onResize);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", onKeyDown);
-      desktop.removeEventListener("change", onResize);
-    };
-  }, [open]);
-
   const identity = [me?.company_name, me?.role_name].filter(Boolean).join(" · ");
   return (
-    <div className={`shell-root${open ? " shell-open" : ""}`}>
+    <div className="shell-root">
       <header className="shell-header">
-        <button ref={toggleRef} className="shell-toggle" type="button" aria-label={open ? "Cerrar menú" : "Abrir menú"} aria-expanded={open} aria-controls="shell-menu" onClick={() => setOpen(!open)}>
-          <ShellIcon kind="menu" />
-        </button>
         <a className="shell-brand" href="/v2/" aria-label="Protektor: tablero de flota">
           <img src={`${import.meta.env.BASE_URL}img/logo-frase.png`} alt="Protektor" />
         </a>
         <div className="shell-account">
-          {identity && <span className="shell-identity" title={identity}>{identity}</span>}
+          {identity && <span className="shell-identity shell-desktop-identity" title={identity}>{identity}</span>}
+          {me?.company_name && <span className="shell-identity shell-mobile-identity" title={me.company_name}>{me.company_name}</span>}
           <a className="shell-classic" href="/gui/home/index">Sistema clásico</a>
         </div>
       </header>
-      {open && <button className="shell-backdrop" type="button" aria-label="Cerrar menú" onClick={closeMenu} />}
       <aside className="shell-sidebar" id="shell-menu">
         <div className="shell-section">Menú</div>
-        <nav ref={navRef} aria-label="Menú principal">
+        <nav aria-label="Menú principal">
           <a className="shell-link" href="/gui/home/index"><ShellIcon kind="realtime" />Tiempo real</a>
           <a className="shell-link" href="/v2/mapa" aria-current={active === "map" ? "page" : undefined}><ShellIcon kind="map" />Mapa en vivo</a>
           <a className="shell-link" href="/v2/" aria-current={active === "fleet" ? "page" : undefined}><ShellIcon kind="fleet" />Tablero de flota</a>
@@ -70,6 +34,12 @@ export default function AppShell({ me, active, children }) {
         </nav>
       </aside>
       <main className="shell-content">{children}</main>
+      <nav className="shell-tabs" aria-label="Navegación">
+        <a href="/v2/mapa" aria-current={active === "map" ? "page" : undefined}><ShellIcon kind="map" /><span>Mapa</span></a>
+        <a href="/v2/" aria-current={active === "fleet" ? "page" : undefined}><ShellIcon kind="fleet" /><span>Tablero</span></a>
+        {me?.is_admin === true && <a href="/v2/leads" aria-current={active === "leads" ? "page" : undefined}><ShellIcon kind="leads" /><span>Leads</span></a>}
+        <a href="/gui/home/index"><ShellIcon kind="realtime" /><span>Clásico</span></a>
+      </nav>
     </div>
   );
 }
