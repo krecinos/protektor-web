@@ -324,7 +324,8 @@ button.primary:disabled, .seg button:disabled { opacity: 0.45; cursor: default; 
 .shell-link { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: #a8acb1; text-decoration: none; font-size: 13px; }
 .shell-link:hover { background: #232a30; color: #fff; }
 .shell-link[aria-current="page"] { background: var(--sidebar-active); color: #fff; }
-.shell-icon { width: 16px; height: 16px; flex: none; }
+.icon { flex: none; vertical-align: middle; }
+.shell-icon { width: 18px; height: 18px; flex: none; }
 .shell-content { margin-left: 220px; padding-top: 54px; min-width: 0; min-height: 100vh; }
 .shell-content .panel { top: 70px; }
 .shell-header a:focus-visible { outline: 2px solid var(--series-1); outline-offset: 3px; }
@@ -585,3 +586,6 @@ td.check input { accent-color: var(--action-primary); }
 .sheet-actions :is(a, button) { display: flex; align-items: center; justify-content: center; min-height: 44px; padding: var(--space-2); border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface-2); color: var(--link); font: inherit; text-align: center; text-decoration: none; cursor: pointer; }
 .sheet-actions :is(a, button):hover { background: var(--series-1-soft); }
 .sheet-body > [role="status"]:empty { display: none; }
+
+/* Separación uniforme entre los iconos decorativos y sus acciones. */
+.sheet-actions :is(a, button), .live-map-info .map-info-actions :is(a, button) { gap: 6px; }

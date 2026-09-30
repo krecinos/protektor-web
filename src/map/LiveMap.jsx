@@ -1,3 +1,4 @@
+import Icon from "../components/Icon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import VehicleSheet from "./VehicleSheet";
 import AppShell from "../components/AppShell";
@@ -266,9 +267,9 @@ export default function LiveMap() {
         </section>
         <aside id="map-vehicles" className={`map-vehicles${panelOpen ? " is-open" : ""}`} aria-label="Vehículos" onKeyDown={(event) => { if (event.key === "Escape") { setPanelOpen(false); panelToggle.current?.focus(); } }}>
           <div className="map-list-header">
-            <div className="map-list-title"><h1>Mapa en vivo</h1><button className="map-panel-close" onClick={() => { setPanelOpen(false); panelToggle.current?.focus(); }} aria-label="Cerrar lista de vehículos">Cerrar</button></div>
+            <div className="map-list-title"><h1>Mapa en vivo</h1><button className="map-panel-close" onClick={() => { setPanelOpen(false); panelToggle.current?.focus(); }} aria-label="Cerrar lista de vehículos"><Icon name="x" size={18} /> Cerrar</button></div>
             <p>{fleet.length - offline} en línea · {offline} fuera de línea</p>
-            <label htmlFor="vehicle-search">Buscar por nombre o placa</label>
+            <label htmlFor="vehicle-search"><Icon name="search" size={16} /> Buscar por nombre o placa</label>
             <input ref={searchRef} id="vehicle-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nombre o placa" />
             <div className="toolbar map-filters">{[["all", "Todos"], ["online", "En línea"], ["offline", "Fuera de línea"]].map(([key, label]) => <button key={key} aria-pressed={filter === key} onClick={() => setFilter(key)}>{label}</button>)}</div>
           </div>

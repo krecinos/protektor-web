@@ -1,3 +1,4 @@
+import Icon from "../components/Icon";
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import {
@@ -78,7 +79,7 @@ export default function DetailPanel({ kind, item, onClose, onChanged }) {
           </div>
         </div>
         <button className="icon-btn" onClick={onClose} aria-label="Cerrar detalle">
-          ×
+          <Icon name="x" />
         </button>
       </div>
 

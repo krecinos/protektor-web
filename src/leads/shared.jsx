@@ -1,3 +1,4 @@
+import Icon from "../components/Icon";
 // Piezas comunes de la gestión de citas y leads.
 
 export const APPT_STATUS = {
@@ -70,7 +71,7 @@ export function ContactLine({ phone, email }) {
   );
 }
 
-const KIND_ICON = { note: "💬", status: "🔄", reschedule: "📅" };
+const KIND_ICON = { note: "message-square", status: "refresh-cw", reschedule: "calendar" };
 
 export function History({ items, loading }) {
   if (loading) return <p className="skeleton">Cargando historial…</p>;
@@ -80,7 +81,7 @@ export function History({ items, loading }) {
       {items.map((h) => (
         <li key={h.id}>
           <span className="h-icon" aria-hidden="true">
-            {KIND_ICON[h.kind] ?? "•"}
+            <Icon name={KIND_ICON[h.kind] ?? "circle"} size={16} />
           </span>
           <div>
             <div className="h-body">{h.body}</div>

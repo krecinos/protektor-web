@@ -1,3 +1,4 @@
+import Icon from "../components/Icon";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ageLabel, batteryClass, coverageLabel, reportLabel, STATES } from "./fleet";
 import { copyCoordinates } from "./infoWindow";
@@ -77,7 +78,7 @@ export default function VehicleSheet({ vehicle, now, onClose }) {
         if (event.detail !== 0 && suppressClick.current) { suppressClick.current = false; return; }
         setExpanded((value) => !value);
       }}><span /></button>
-      <button type="button" className="sheet-close" aria-label="Cerrar datos del vehículo" onClick={onClose}>×</button>
+      <button type="button" className="sheet-close" aria-label="Cerrar datos del vehículo" onClick={onClose}><Icon name="x" /></button>
       <div className="sheet-title"><h2 title={vehicle.name}>{vehicle.name}</h2><span className="map-status map-badge">{state.label}</span></div>
       <p className="sheet-summary">{ageLabel(vehicle.time, now)} · {vehicle.speed}</p>
       <p className="sheet-location" title={vehicle.location}>{vehicle.location}</p>
@@ -92,10 +93,10 @@ export default function VehicleSheet({ vehicle, now, onClose }) {
       {vehicle.description && <p className="sheet-secondary">{vehicle.description}</p>}
       {coverage && <p className="sheet-secondary">{coverage}</p>}
       <div className="sheet-actions">
-        {coords && <><a href={`https://waze.com/ul?ll=${coords}&navigate=yes`} target="_blank" rel="noopener">Waze</a>
-          <a href={`https://www.google.com/maps/search/?api=1&query=${coords}`} target="_blank" rel="noopener">Google Maps</a>
-          <button type="button" onClick={copy}>Copiar coordenadas</button></>}
-        <a href={`/gui/monitor/routes/${encodeURIComponent(vehicle.id)}`}>Ver rutas</a>
+        {coords && <><a href={`https://waze.com/ul?ll=${coords}&navigate=yes`} target="_blank" rel="noopener"><Icon name="navigation" size={16} />Waze</a>
+          <a href={`https://www.google.com/maps/search/?api=1&query=${coords}`} target="_blank" rel="noopener"><Icon name="map" size={16} />Google Maps</a>
+          <button type="button" onClick={copy}><Icon name="copy" size={16} />Copiar coordenadas</button></>}
+        <a href={`/gui/monitor/routes/${encodeURIComponent(vehicle.id)}`}><Icon name="route" size={16} />Ver rutas</a>
       </div>
       <p role="status">{feedback}</p>
     </div>

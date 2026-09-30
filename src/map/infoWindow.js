@@ -1,3 +1,4 @@
+import { createIcon } from "../components/Icon";
 import { batteryClass, coverageLabel, reportLabel, STATES } from "./fleet";
 
 function element(tag, text, className) {
@@ -44,14 +45,16 @@ export function infoContent(vehicle, now) {
   if (coverage) content.append(element("p", coverage, "map-info-secondary"));
   const actions = element("div", "", "map-info-actions");
   const coords = `${vehicle.point.lat},${vehicle.point.lng}`;
-  for (const [label, url] of [["Waze", `https://waze.com/ul?ll=${coords}&navigate=yes`], ["Google Maps", `https://www.google.com/maps/search/?api=1&query=${coords}`]]) {
+  for (const [label, url, icon] of [["Waze", `https://waze.com/ul?ll=${coords}&navigate=yes`, "navigation"], ["Google Maps", `https://www.google.com/maps/search/?api=1&query=${coords}`, "map"]]) {
     const link = element("a", label);
+    link.prepend(createIcon(icon, 16));
     link.href = url;
     link.target = "_blank";
     link.rel = "noopener";
     actions.append(link);
   }
   const copy = element("button", "Copiar");
+  copy.prepend(createIcon("copy", 16));
   copy.type = "button";
   const feedback = element("span", "", "map-copy-feedback");
   feedback.setAttribute("role", "status");
@@ -60,6 +63,7 @@ export function infoContent(vehicle, now) {
     catch { feedback.textContent = "No se pudo copiar. Selecciona las coordenadas para copiarlas."; }
   };
   const routes = element("a", "Ver rutas");
+  routes.prepend(createIcon("route", 16));
   routes.href = `/gui/monitor/routes/${encodeURIComponent(vehicle.id)}`;
   actions.append(copy, routes);
   content.append(actions, feedback);
