@@ -7,7 +7,7 @@ function element(tag, text, className) {
   return node;
 }
 
-async function copyCoordinates(value) {
+export async function copyCoordinates(value) {
   try {
     if (navigator.clipboard) { await navigator.clipboard.writeText(value); return; }
   } catch { /* Algunos navegadores deniegan el portapapeles incluso en HTTPS. */ }

@@ -554,3 +554,34 @@ td.check input { accent-color: var(--action-primary); }
 @media (max-width: 767px) {
   .live-map-host .gm-style-iw-c { width: min(260px, 78vw); max-width: min(260px, 78vw) !important; }
 }
+
+/* Hoja móvil: los anclajes se desplazan sin interferir con el scroll de los datos. */
+.sheet-root {
+  position: fixed; inset: auto 0 0; z-index: 40;
+  height: 70vh; height: 70dvh; min-height: calc(150px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; overflow: hidden;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--surface-1); color: var(--text-primary);
+  border: 1px solid var(--border); border-bottom: 0;
+  border-radius: var(--space-5) var(--space-5) 0 0;
+  box-shadow: 0 -4px 20px var(--backdrop);
+  transition: transform 160ms ease-out;
+}
+.sheet-dragging { transition: none; }
+.sheet-header {
+  position: relative; flex: none; height: 150px; padding: 0 var(--space-4) var(--space-3);
+  touch-action: none; user-select: none;
+}
+.sheet-grabber { display: flex; align-items: center; justify-content: center; width: 100%; height: 44px; padding: 0 48px; background: transparent; border: 0; cursor: grab; }
+.sheet-grabber span { width: 36px; height: 5px; border-radius: var(--radius-pill); background: var(--text-muted); }
+.sheet-close { position: absolute; top: 0; right: var(--space-2); width: 44px; height: 44px; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--text-primary); font-size: 26px; cursor: pointer; }
+.sheet-title { display: flex; align-items: center; gap: var(--space-2); }
+.sheet-title h2 { flex: 1; min-width: 0; margin: 0; font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-title .map-badge { flex: none; }
+.sheet-summary, .sheet-location { margin: var(--space-2) 0 0; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--space-4) var(--space-4); overflow-wrap: anywhere; }
+.sheet-secondary { font-size: 12px; color: var(--text-secondary); }
+.sheet-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+.sheet-actions :is(a, button) { display: flex; align-items: center; justify-content: center; min-height: 44px; padding: var(--space-2); border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface-2); color: var(--link); font: inherit; text-align: center; text-decoration: none; cursor: pointer; }
+.sheet-actions :is(a, button):hover { background: var(--series-1-soft); }
+.sheet-body > [role="status"]:empty { display: none; }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import VehicleSheet from "./VehicleSheet";
 import AppShell from "../components/AppShell";
 import { api } from "../api";
 import { loadGoogleMaps } from "../lib/googleMaps";
@@ -13,6 +14,7 @@ function Highlight({ text, query }) {
 }
 
 export default function LiveMap() {
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 767px)").matches);
   const [me, setMe] = useState(null);
   const [devices, setDevices] = useState([]);
   const [positions, setPositions] = useState([]);
@@ -37,6 +39,14 @@ export default function LiveMap() {
   const selectRef = useRef(null);
   const panelToggle = useRef(null);
   const searchRef = useRef(null);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const change = () => setIsMobile(media.matches);
+    change();
+    media.addEventListener("change", change);
+    return () => media.removeEventListener("change", change);
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -103,6 +113,11 @@ export default function LiveMap() {
     const anchor = showMarker(vehicle, true);
     mapRef.current.panTo(vehicle.point);
     if (mapRef.current.getZoom() < 16) mapRef.current.setZoom(16);
+    if (isMobile) {
+      info.current.close();
+      infoVehicle.current = null;
+      return;
+    }
     info.current.setOptions({ headerContent: document.createTextNode(vehicle.name), content: infoContent(vehicle, Date.now()) });
     infoVehicle.current = vehicle;
     info.current.setOptions({ disableAutoPan: false });
@@ -209,14 +224,32 @@ export default function LiveMap() {
     }
     recluster.current = updateClusters;
     updateClusters();
-    if (selected?.point) {
+    if (!isMobile && selected?.point) {
       // La apertura ajusta la tarjeta; solo los nuevos datos se refrescan sin mover la vista.
       if (infoVehicle.current !== selected) {
         info.current.setOptions({ disableAutoPan: true, headerContent: document.createTextNode(selected.name), content: infoContent(selected, now) });
         infoVehicle.current = selected;
       }
     } else { info.current.close(); infoVehicle.current = null; }
-  }, [fleet, maps, loading, unauthorized, selectedId, selected, now]);
+  }, [fleet, maps, loading, unauthorized, selectedId, selected, now, isMobile]);
+
+  useEffect(() => {
+    if (selectedId != null && !selected) setSelectedId(null);
+  }, [selectedId, selected]);
+
+  useEffect(() => {
+    if (isMobile) {
+      info.current?.close();
+      infoVehicle.current = null;
+      if (selectedId != null) setPanelOpen(false);
+    } else if (selected?.point && info.current && mapRef.current) {
+      info.current.setOptions({ disableAutoPan: true, headerContent: document.createTextNode(selected.name), content: infoContent(selected, now) });
+      infoVehicle.current = selected;
+      info.current.open({ map: mapRef.current, anchor: markers.current.get(selected.id), shouldFocus: false });
+    }
+    // Solo el cambio de formato reabre la tarjeta; los refrescos conservan la vista.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile]);
 
   useEffect(() => {
     if (panelOpen) searchRef.current?.focus();
@@ -256,5 +289,6 @@ export default function LiveMap() {
           </div>
         </aside>
       </div>}
+    {isMobile && selected && !unauthorized && <VehicleSheet key={selected.id} vehicle={selected} now={now} onClose={() => { setSelectedId(null); panelToggle.current?.focus(); }} />}
   </AppShell>;
 }
