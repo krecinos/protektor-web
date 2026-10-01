@@ -65,7 +65,7 @@ export default function LiveMap() {
         }
       } finally { pending.delete(key); }
     }
-    const getDevices = () => refresh("devices", api.devices, (value) => setDevices(value.items ?? []));
+    const getDevices = () => refresh("devices", () => api.devices(500, 1), (value) => setDevices(value.items ?? []));
     const getPositions = () => refresh("positions", api.positions, (value) => setPositions(value ?? []));
     const getMe = () => refresh("me", api.whoami, setMe);
     Promise.all([getMe(), getDevices(), getPositions()]).finally(() => { if (alive) setLoading(false); });

@@ -50,7 +50,9 @@ export const api = {
   leadHistory: (id) => get(`/chat/leads/${id}/followups`),
 
   whoami: () => get("/auth/whoami"),
-  devices: (limit = 500) => get(`/fleet/devices?limit=${limit}`),
+  // `status`: 1 = solo activos (el mapa no debe mostrar vehiculos dados de baja).
+  devices: (limit = 500, status) =>
+    get(`/fleet/devices?limit=${limit}${status != null ? `&status=${status}` : ""}`),
   positions: () => get("/fleet/positions"),
   maintenanceStatus: () => get("/maintenance/status"),
   distance: (deviceId, start, end) =>
