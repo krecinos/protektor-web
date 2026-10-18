@@ -7,6 +7,8 @@ import { loadGoogleMaps } from "../lib/googleMaps";
 import { ageLabel, batteryClass, coverageLabel, joinFleet, STATES } from "./fleet";
 import { infoContent } from "./infoWindow";
 import { clusterIcon, markerIcon } from "./markerIcon";
+import { DARK_MAP_STYLE } from "./darkMapStyle";
+import { getTheme } from "../lib/theme";
 
 function Highlight({ text, query }) {
   const index = text.toLocaleLowerCase("es").indexOf(query.toLocaleLowerCase("es"));
@@ -128,13 +130,16 @@ export default function LiveMap() {
 
   useEffect(() => {
     if (!maps || loading || unauthorized || !host.current) return;
-    const map = new maps.Map(host.current, { center: { lat: 14.6349, lng: -90.5069 }, zoom: 8, mapTypeControl: false, streetViewControl: false, fullscreenControl: false });
+    const map = new maps.Map(host.current, { center: { lat: 14.6349, lng: -90.5069 }, zoom: 8, mapTypeControl: false, streetViewControl: false, fullscreenControl: false, styles: getTheme() === "dark" ? DARK_MAP_STYLE : null });
+    const onTheme = (event) => map.setOptions({ styles: event.detail === "dark" ? DARK_MAP_STYLE : null });
+    window.addEventListener("protektor:theme", onTheme);
     mapRef.current = map;
     info.current = new maps.InfoWindow({ disableAutoPan: true, maxWidth: 280 });
     const close = info.current.addListener("closeclick", () => setSelectedId(null));
     const idle = map.addListener("idle", () => recluster.current?.());
     const projectionChanged = map.addListener("projection_changed", () => recluster.current?.());
     return () => {
+      window.removeEventListener("protektor:theme", onTheme);
       idle.remove();
       projectionChanged.remove();
       recluster.current = null;

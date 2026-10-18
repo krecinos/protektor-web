@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api, ApiError, dateRange, fillMissingDays } from "./api";
 import DistanceChart from "./components/DistanceChart";
 import FleetTable from "./components/FleetTable";
+import { useCountUp } from "./lib/useCountUp";
 
 const RANGES = [
   { days: 7, label: "7 días" },
@@ -13,11 +14,12 @@ const RANGES = [
 // Indicador: número solo, sin gráfico. Es la forma correcta cuando el dato es
 // un titular, no una distribución.
 function Tile({ label, value, unit, foot }) {
+  const animated = useCountUp(Number.isFinite(value) ? value : 0);
   return (
     <div className="card tile">
       <div className="label">{label}</div>
       <div className="value">
-        {value}
+        {Number.isFinite(value) ? Math.round(animated).toLocaleString("es-GT") : value}
         {unit ? <span className="unit">{unit}</span> : null}
       </div>
       {foot ? <div className="foot">{foot}</div> : null}
@@ -95,7 +97,10 @@ export default function App() {
     return (
       <AppShell me={me} active="fleet">
         <div className="app">
-          <p className="skeleton">Cargando tablero…</p>
+          <div className="grid-tiles" role="status" aria-label="Cargando tablero">
+            {[0, 1, 2, 3].map((i) => <div key={i} className="card tile sk" />)}
+          </div>
+          <div className="card sk tall" />
         </div>
       </AppShell>
     );
@@ -151,7 +156,7 @@ export default function App() {
           <Tile label="Mantenimientos vencidos" value={kpis.overdue} foot="vehículos con servicio pendiente" />
           <Tile
             label={`Kilometraje (${days} d)`}
-            value={Math.round(kpis.totalKm).toLocaleString("es-GT")}
+            value={Math.round(kpis.totalKm)}
             unit="km"
             foot={selected ? selectedName : "—"}
           />

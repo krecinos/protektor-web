@@ -131,8 +131,8 @@ export default function DistanceChart({ data, title, subtitle }) {
           strokeWidth="1"
         />
 
-        <path d={area} fill="var(--series-1-soft)" opacity="0.35" />
-        <path d={line} fill="none" stroke="var(--series-1)" strokeWidth="2" strokeLinejoin="round" />
+        <path d={area} fill="var(--series-1)" opacity="0.16" />
+        <path d={line} pathLength="1" fill="none" stroke="var(--series-1)" strokeWidth="2.25" strokeLinejoin="round" strokeLinecap="round" />
 
         {/* Etiqueta directa solo del pico */}
         <text
