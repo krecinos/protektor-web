@@ -6,6 +6,7 @@ const NAV = [
   { key: "fleet", href: "/v2/", icon: "layout-dashboard", long: "Tablero de flota", short: "Tablero" },
   { key: "map", href: "/v2/mapa", icon: "map-pin", long: "Mapa en vivo", short: "Mapa", live: true },
   { key: "leads", href: "/v2/leads", icon: "clipboard-list", long: "Leads y Citas", short: "Leads", admin: true },
+  { key: "mcp", href: "/v2/admin/mcp", icon: "radio", long: "Conector MCP", short: "MCP", admin: true },
   { key: "classic", href: "/gui/home/index", icon: "radio", long: "Tiempo real", short: "Clásico", title: "Sistema clásico" },
 ];
 

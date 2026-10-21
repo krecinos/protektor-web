@@ -41,6 +41,12 @@ const get = (path) => request("GET", path);
 const patch = (path, body) => request("PATCH", path, body);
 
 export const api = {
+  mcp: () => get("/admin/mcp"),
+  updateMcp: (enabled) => patch("/admin/mcp", { enabled }),
+  updateMcpTools: (names, enabled) => patch("/admin/mcp/tools", { names, enabled }),
+  rotateMcpToken: () => request("POST", "/admin/mcp/token"),
+  mcpAudit: (tool = "") => get(`/admin/mcp/audit?limit=50${tool ? `&tool=${encodeURIComponent(tool)}` : ""}`),
+
   // Gestión de citas y leads del bot (solo administradores).
   appointments: (params = "") => get(`/chat/appointments?limit=500${params}`),
   updateAppointment: (id, body) => patch(`/chat/appointments/${id}`, body),
