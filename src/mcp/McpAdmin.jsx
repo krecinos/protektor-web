@@ -9,7 +9,7 @@ const date = (value) => {
   const parsed = timestamp(value);
   return parsed && !isNaN(parsed) ? parsed.toLocaleString("es-GT", { timeZone: "America/Guatemala", dateStyle: "medium", timeStyle: "short" }) : "Sin registros";
 };
-const toolLabel = (name) => ({ __auth__: "Acceso rechazado (token inválido)", __disabled__: "Bloqueada (deshabilitada)" })[name] || name;
+const toolLabel = (name) => ({ __reveal__: "URL del conector consultada", __auth__: "Acceso rechazado (token inválido)", __disabled__: "Bloqueada (deshabilitada)" })[name] || name;
 const errorText = (error) => error?.status === 403 ? "Solo personal de Protektor" : error?.status === 401 ? "Sesión no válida" : error?.message || "No se pudo cargar la información";
 
 function Switch({ label, enabled, disabled, onChange }) {
@@ -23,7 +23,7 @@ function Confirm({ kind, onClose, onConfirm }) {
   useEffect(() => { ref.current.showModal(); }, []);
   return <dialog className="mcp-dialog" ref={ref} onCancel={onClose} onClose={onClose} aria-labelledby="mcp-confirm-title">
     <h2 id="mcp-confirm-title">{kind === "token" ? "¿Generar nuevo token?" : "¿Deshabilitar el MCP?"}</h2>
-    <p>{kind === "token" ? "El conector actual dejará de funcionar. El token anterior quedará invalidado y tendrás que configurar el conector con la nueva URL. Cópiala al generarla: solo se mostrará una vez." : "Se bloqueará el acceso a todas las herramientas del conector MCP."}</p>
+    <p>{kind === "token" ? "El conector actual dejará de funcionar hasta que lo configures con la nueva URL (podrás verla aquí cuando quieras)." : "Se bloqueará el acceso a todas las herramientas del conector MCP."}</p>
     <p className="muted">Los cambios pueden tardar hasta 15 segundos en aplicarse en el servicio.</p>
     <div className="mcp-actions"><button autoFocus onClick={onClose}>Cancelar</button><button onClick={onConfirm}>{kind === "token" ? "Generar token" : "Deshabilitar MCP"}</button></div>
   </dialog>;
@@ -38,6 +38,8 @@ export default function McpAdmin() {
   const lock = useRef(false);
   const [confirm, setConfirm] = useState(null);
   const [secret, setSecret] = useState(null);
+  const [tokenError, setTokenError] = useState(null);
+  const secretGeneration = useRef(0);
   const [copyStatus, setCopyStatus] = useState("");
   const [filter, setFilter] = useState("");
   const [audit, setAudit] = useState([]);
@@ -69,7 +71,24 @@ export default function McpAdmin() {
       .finally(() => { if (alive) setAuditLoading(false); });
     return () => { alive = false; };
   }, [filter, refresh]);
-  useEffect(() => { if (secret) secretRef.current?.focus(); }, [secret]);
+  function hideSecret() {
+    secretGeneration.current += 1;
+    setSecret(null);
+    setCopyStatus("");
+  }
+  useEffect(() => {
+    window.addEventListener("pagehide", hideSecret);
+    return () => {
+      secretGeneration.current += 1;
+      window.removeEventListener("pagehide", hideSecret);
+    };
+  }, []);
+  useEffect(() => {
+    if (!secret) return;
+    secretRef.current?.focus();
+    const timer = setTimeout(hideSecret, 60000);
+    return () => clearTimeout(timer);
+  }, [secret]);
 
   async function mutate(action, optimistic) {
     if (lock.current) return;
@@ -87,20 +106,32 @@ export default function McpAdmin() {
     if (names.length > 50) { setError(new Error("Selecciona un grupo de hasta 50 herramientas.")); return; }
     mutate(() => api.updateMcpTools(names, enabled), { ...data, tools: data.tools.map((t) => names.includes(t.name) ? { ...t, enabled } : t) });
   }
-  async function rotate() {
-    setConfirm(null);
+  async function showToken(rotating = false) {
+    if (rotating) setConfirm(null);
     if (lock.current) return;
-    lock.current = true; setBusy(true); setError(null); setSecret(null); setCopyStatus("");
+    lock.current = true; setBusy(true); setTokenError(null);
+    hideSecret();
+    const generation = secretGeneration.current;
     try {
-      const result = await api.rotateMcpToken();
+      const result = await (rotating ? api.rotateMcpToken() : api.revealMcpToken());
+      if (generation !== secretGeneration.current) return;
       setSecret(result.url);
-      setData((current) => ({ ...current, token: { configured: true, hint: result.hint, rotated_at: result.rotated_at }, public_url_template: result.url.replace(result.token, `k-••••${result.hint}`) }));
-    } catch (e) { setError(e); }
-    finally { lock.current = false; setBusy(false); }
+      setRefresh((value) => value + 1);
+    } catch (e) {
+      if (generation === secretGeneration.current) {
+        setTokenError(e);
+        if (e.status === 401 || e.status === 403) setError(e);
+      }
+    } finally { lock.current = false; setBusy(false); }
   }
   async function copy() {
-    try { await navigator.clipboard.writeText(secret); setCopyStatus("URL copiada"); }
-    catch { setCopyStatus("No se pudo copiar. Selecciona y copia la URL manualmente."); }
+    const generation = secretGeneration.current;
+    try {
+      await navigator.clipboard.writeText(secret);
+      if (generation === secretGeneration.current) setCopyStatus("Copiada");
+    } catch {
+      if (generation === secretGeneration.current) setCopyStatus("No se pudo copiar. Selecciona y copia la URL manualmente.");
+    }
   }
   const forbidden = error?.status === 403 || auditError?.status === 403;
   const sync = timestamp(data?.service_link?.last_sync_at);
@@ -116,8 +147,12 @@ export default function McpAdmin() {
           {stale && <p className="mcp-warning" role="status">El servicio MCP no ha sincronizado</p>}
         </section>
         <section className="card mcp-section"><div className="mcp-heading"><h2>Token de acceso</h2><button disabled={busy || !!secret} onClick={() => setConfirm("token")}>Generar nuevo token</button></div>
-          <code className="mcp-url">{data.public_url_template}</code><p className="muted">{data.token.configured ? `Última rotación: ${date(data.token.rotated_at)}` : "Sin token configurado"}</p>
-          {secret && <div className="mcp-secret" ref={secretRef} tabIndex={-1}><strong>Cópiala ahora, no se volverá a mostrar</strong><label htmlFor="mcp-secret-url" className="muted small">URL completa del conector</label><textarea id="mcp-secret-url" readOnly value={secret} onFocus={(e) => e.target.select()} /><div className="mcp-actions"><button onClick={copy}>Copiar</button><button onClick={() => { setSecret(null); setCopyStatus(""); }}>Cerrar y descartar URL</button><span role="status">{copyStatus}</span></div></div>}
+          <code className="mcp-url" ref={secretRef} tabIndex={secret ? -1 : undefined}>{secret || data.public_url_template}</code>
+          <p className="muted">{data.token.configured ? `Última rotación: ${date(data.token.rotated_at)}` : "Sin token configurado"}</p>
+          {secret ? <div className="mcp-actions"><button onClick={copy}>Copiar</button><button onClick={hideSecret}>Ocultar</button><span role="status">{copyStatus}</span><span className="muted small">La URL se ocultará automáticamente a los 60 segundos.</span></div>
+            : data.token.revealable ? <button disabled={busy} onClick={() => showToken()}>Mostrar URL</button>
+            : data.token.configured && <p className="muted">Este token se creó antes de poder mostrarse; genera uno nuevo para verlo aquí.</p>}
+          {tokenError && <p className="error" role="alert">{tokenError.detail || errorText(tokenError)}</p>}
         </section>
         <section className="card mcp-section"><div className="mcp-heading"><h2>Herramientas</h2><button disabled={busy || !data.tools.some((t) => t.category !== "consulta" && t.enabled)} onClick={() => changeTools(data.tools.filter((t) => t.category === "escritura" || t.category === "mensajeria"), false)}>Modo solo lectura</button></div>
           <p className="muted">El modo solo lectura deshabilita escritura y mensajería; conserva la selección de consultas.</p>
@@ -134,7 +169,7 @@ export default function McpAdmin() {
           {auditLoading ? <p role="status" className="skeleton">Cargando actividad…</p> : auditError ? <p role="alert" className="error">{errorText(auditError)}</p> : !audit.length ? <p className="muted">No hay actividad con este filtro.</p> : <div className="table-scroll"><table><thead><tr>{["Fecha (GT)", "Herramienta", "Resultado", "Duración", "Error"].map((label) => <th key={label}>{label}</th>)}</tr></thead><tbody>{audit.map((row) => <tr key={row.id}><td data-label="Fecha (GT)">{date(row.created_at)}</td><td data-label="Herramienta">{toolLabel(row.tool)}</td><td data-label="Resultado"><span className={`mcp-badge ${row.ok ? "" : "mcp-danger"}`}>{row.ok ? "OK" : "Error"}</span></td><td data-label="Duración">{row.duration_ms == null ? "—" : `${row.duration_ms} ms`}</td><td data-label="Error">{row.error || "—"}</td></tr>)}</tbody></table></div>}
         </section>
       </>}
-      {confirm && <Confirm kind={confirm} onClose={() => setConfirm(null)} onConfirm={() => { if (confirm === "token") rotate(); else { setConfirm(null); mutate(() => api.updateMcp(false), { ...data, enabled: false }); } }} />}
+      {confirm && <Confirm kind={confirm} onClose={() => setConfirm(null)} onConfirm={() => { if (confirm === "token") showToken(true); else { setConfirm(null); mutate(() => api.updateMcp(false), { ...data, enabled: false }); } }} />}
     </>}
   </div></AppShell></div>;
 }

@@ -44,6 +44,7 @@ export const api = {
   mcp: () => get("/admin/mcp"),
   updateMcp: (enabled) => patch("/admin/mcp", { enabled }),
   updateMcpTools: (names, enabled) => patch("/admin/mcp/tools", { names, enabled }),
+  revealMcpToken: () => get("/admin/mcp/token"),
   rotateMcpToken: () => request("POST", "/admin/mcp/token"),
   mcpAudit: (tool = "") => get(`/admin/mcp/audit?limit=50${tool ? `&tool=${encodeURIComponent(tool)}` : ""}`),
 
