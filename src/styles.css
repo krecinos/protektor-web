@@ -690,7 +690,6 @@ button.primary:active:not(:disabled) { transform: translateY(0) scale(0.98); }
 .shell-identity { display: block; max-width: 280px; }
 .shell-link { border: 0; background: transparent; cursor: pointer; font-family: inherit; }
 .shell-link[data-active="true"] { color: var(--text-primary); background: var(--series-1-soft); font-weight: 600; }
-.shell-bottom-nav { display: none; }
 .shell-legacy { display: inline-flex; margin-left: auto; flex: none; opacity: .65; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .shell-sidebar-toggle, .shell-drawer-toggle, .shell-drawer-heading button {
@@ -745,13 +744,10 @@ button.primary:active:not(:disabled) { transform: translateY(0) scale(0.98); }
   .shell-sidebar[data-open="true"] { transform: translateX(0); visibility: visible; }
   .shell-drawer-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .shell-drawer-identity { display: block; margin: 0 0 8px; color: var(--text-secondary); font-size: 12px; overflow-wrap: anywhere; }
-  .shell-bottom-nav { display: flex; position: fixed; inset: auto 0 0; z-index: 40; background: var(--surface-1); border-top: 1px solid var(--border); padding: 4px max(8px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
-  .shell-bottom-nav .shell-link { flex: 1; flex-direction: column; gap: 3px; min-height: 52px; font-size: 12px; }
-  .shell-bottom-nav .shell-link::after { display: none; }
-  .shell-content { margin-left: 0; transition: none; padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  .shell-content { margin-left: 0; transition: none; padding-bottom: env(safe-area-inset-bottom, 0px); }
   .shell-theme { width: 44px; height: 44px; }
-  .live-map-page { height: calc(100vh - var(--nav-h) - 64px - env(safe-area-inset-bottom, 0px)); height: calc(100dvh - var(--nav-h) - 64px - env(safe-area-inset-bottom, 0px)); }
-  .sheet-root { bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  .live-map-page { height: calc(100vh - var(--nav-h) - env(safe-area-inset-bottom, 0px)); height: calc(100dvh - var(--nav-h) - env(safe-area-inset-bottom, 0px)); }
+  .sheet-root { bottom: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .shell-root *, .shell-root *::before, .shell-root *::after { transition: none !important; animation: none !important; }

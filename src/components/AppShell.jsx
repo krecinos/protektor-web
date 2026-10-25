@@ -45,7 +45,6 @@ export default function AppShell({ me, active, children }) {
   const hasPathMatch = sections.some((section) => section.items.some(pathMatches));
   const isActive = (item) => pathMatches(item) || (!hasPathMatch && active === item.key);
   const sectionActive = (section) => section.items.some(isActive);
-  const mobileSections = ["realtime", "reports", "alerts"].map((key) => sections.find((s) => s.key === key)).filter(Boolean);
   const closePopup = (restore = true) => {
     setPopup(null);
     setTooltip(null);
@@ -192,13 +191,6 @@ export default function AppShell({ me, active, children }) {
       <a href={classic.href} className="shell-link shell-classic" aria-label={compact ? classic.label : undefined} onClick={navigate} {...tipEvents(classic.label)}><Icon name="external-link" /><span className="shell-sidebar-label">Sistema clásico</span></a>
     </aside>
     <main className="shell-content" inert={drawer ? "" : undefined}>{children}</main>
-    <nav inert={drawer ? "" : undefined} className="shell-bottom-nav" aria-label="Menú móvil">
-      {mobileSections.map((section) => {
-        const content = <><Icon name={section.icon || "circle"} /><span>{{ realtime: "Mapa", reports: "Reportes", alerts: "Alertas" }[section.key]}</span></>;
-        return section.items.length === 1 ? <a key={section.key} className="shell-link" href={section.items[0].href} aria-current={sectionActive(section) ? "page" : undefined}>{content}</a> : <button key={section.key} type="button" className="shell-link" data-active={sectionActive(section)} aria-expanded={drawer} aria-controls="shell-sidebar" onClick={(e) => openDrawer(e, section)}>{content}</button>;
-      })}
-      <button type="button" className="shell-link" aria-expanded={drawer} aria-controls="shell-sidebar" onClick={openDrawer}><Icon name="more-horizontal" /><span>Más</span></button>
-    </nav>
     {tooltip && <div className="shell-tooltip" role="tooltip" style={{ top: tooltip.top }}>{tooltip.label}</div>}
     {group && <div id="shell-flyout" ref={popupRef} className="shell-flyout" aria-label={group.label} role="region" style={{ top: popup.top, maxHeight: `calc(100dvh - ${popup.top + 12}px)` }} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget) && e.relatedTarget !== popupTrigger.current) closePopup(false); }} onKeyDown={(e) => {
       if (e.key === "Escape" || e.key === "ArrowLeft") { e.preventDefault(); closePopup(); }

@@ -71,8 +71,8 @@ Cada entrada de v2 declara qué `menu_child.menu_id` legacy la habilita; se mues
 
 Escritorio: **menú lateral izquierdo plegable** (decisión del usuario 2026-10-24, como el clásico):
 expandido con ícono+texto y grupos tipo acordeón, o contraído solo íconos con tooltip y menú flotante;
-estado recordado en `localStorage`. Móvil (WebView): pestañas Mapa · Reportes · Alertas · Más + la misma
-barra lateral como cajón desde la hamburguesa.
+estado recordado en `localStorage`. Móvil (WebView): sin barra inferior (el usuario la quitó por innecesaria); la misma barra lateral
+se abre como cajón desde la hamburguesa ☰.
 
 ## 5. Reportería y gráficas modernas
 
@@ -170,6 +170,7 @@ Comandos sensibles (Ola 1) y la capa de permisos: diseño de Claude, implementac
   `-c sandbox_workspace_write.network_access=true` para correr los tests contra MySQL local.
 
 - Ajuste del usuario: navegación pasa de barra superior a **menú lateral izquierdo plegable** (ver §4).
+- Ajuste del usuario: se elimina la barra de pestañas inferior en móvil; solo menú ☰.
 
 ### Siguiente
 - Ola 1: abrir el acceso a v2 para roles 3-6 (repuntar/habilitar menu_child 38) y comandos de Tiempo real.
