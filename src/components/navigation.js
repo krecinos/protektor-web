@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { api } from "../api";
 
 const TTL = 5 * 60 * 1000;
@@ -38,4 +39,19 @@ export function loadNavigation(identity) {
     pending.set(identity, request);
   }
   return pending.get(identity);
+}
+
+// Reutiliza tanto la caché como la petición en curso de AppShell.
+export function useNavigation(me) {
+  const identity = navigationIdentity(me);
+  const [result, setResult] = useState(() => ({ identity, data: cachedNavigation(identity) }));
+  useEffect(() => {
+    if (!identity) return;
+    let alive = true;
+    loadNavigation(identity).then((data) => {
+      if (alive) setResult({ identity, data });
+    }).catch(() => { /* Sin capacidades, las acciones privilegiadas se ocultan. */ });
+    return () => { alive = false; };
+  }, [identity]);
+  return result.identity === identity ? result.data : cachedNavigation(identity);
 }

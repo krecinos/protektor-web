@@ -61,6 +61,8 @@ export const api = {
   // `status`: 1 = solo activos (el mapa no debe mostrar vehiculos dados de baja).
   devices: (limit = 500, status) =>
     get(`/fleet/devices?limit=${limit}${status != null ? `&status=${status}` : ""}`),
+  fleetSummary: () => get("/fleet/summary"),
+  accountBalance: () => get("/account/balance"),
   positions: () => get("/fleet/positions"),
   maintenanceStatus: () => get("/maintenance/status"),
   distance: (deviceId, start, end) =>

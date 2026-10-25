@@ -1,3 +1,5 @@
+import { useNavigation } from "../components/navigation";
+import { BalanceBanner, MapKpis } from "./MapNotices";
 import Icon from "../components/Icon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import VehicleSheet from "./VehicleSheet";
@@ -19,6 +21,10 @@ function Highlight({ text, query }) {
 export default function LiveMap() {
   const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 767px)").matches);
   const [me, setMe] = useState(null);
+  const navigation = useNavigation(me);
+  const capabilities = navigation?.capabilities;
+  const [summary, setSummary] = useState(null);
+  const [balance, setBalance] = useState(null);
   const [devices, setDevices] = useState([]);
   const [positions, setPositions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +44,8 @@ export default function LiveMap() {
   const recluster = useRef(null);
   const info = useRef(null);
   const infoVehicle = useRef(null);
+  const infoCapabilities = useRef(null);
+  const balanceRequest = useRef(null);
   const fitted = useRef(false);
   const selectRef = useRef(null);
   const panelToggle = useRef(null);
@@ -54,7 +62,7 @@ export default function LiveMap() {
   useEffect(() => {
     let alive = true;
     const pending = new Set();
-    async function refresh(key, fetcher, setter) {
+    async function refresh(key, fetcher, setter, optional = false) {
       if (pending.has(key)) return;
       pending.add(key);
       try {
@@ -63,15 +71,22 @@ export default function LiveMap() {
       } catch (error) {
         if (alive) {
           if (error.status === 401) setUnauthorized(true);
-          setFailures((prev) => ({ ...prev, [key]: true }));
+          if (optional && error.status === 404) { setter(null); return; }
+          if (!optional) setFailures((prev) => ({ ...prev, [key]: true }));
         }
       } finally { pending.delete(key); }
     }
     const getDevices = () => refresh("devices", () => api.devices(500, 1), (value) => setDevices(value.items ?? []));
     const getPositions = () => refresh("positions", api.positions, (value) => setPositions(value ?? []));
     const getMe = () => refresh("me", api.whoami, setMe);
+    const getSummary = () => refresh("summary", api.fleetSummary, setSummary, true);
+    refresh("balance", () => {
+      balanceRequest.current ??= api.accountBalance();
+      return balanceRequest.current;
+    }, setBalance, true);
+    getSummary();
     Promise.all([getMe(), getDevices(), getPositions()]).finally(() => { if (alive) setLoading(false); });
-    const positionsTimer = setInterval(() => { getPositions(); setNow(Date.now()); }, 60000);
+    const positionsTimer = setInterval(() => { getPositions(); getSummary(); setNow(Date.now()); }, 60000);
     const devicesTimer = setInterval(() => { getDevices(); getMe(); }, 300000);
     const clockTimer = setInterval(() => setNow(Date.now()), 15000);
     return () => { alive = false; clearInterval(positionsTimer); clearInterval(devicesTimer); clearInterval(clockTimer); };
@@ -121,8 +136,9 @@ export default function LiveMap() {
       infoVehicle.current = null;
       return;
     }
-    info.current.setOptions({ headerContent: document.createTextNode(vehicle.name), content: infoContent(vehicle, Date.now()) });
+    info.current.setOptions({ headerContent: document.createTextNode(vehicle.name), content: infoContent(vehicle, Date.now(), capabilities) });
     infoVehicle.current = vehicle;
+    infoCapabilities.current = capabilities;
     info.current.setOptions({ disableAutoPan: false });
     info.current.open({ map: mapRef.current, anchor, shouldFocus: false });
   }
@@ -232,12 +248,13 @@ export default function LiveMap() {
     updateClusters();
     if (!isMobile && selected?.point) {
       // La apertura ajusta la tarjeta; solo los nuevos datos se refrescan sin mover la vista.
-      if (infoVehicle.current !== selected) {
-        info.current.setOptions({ disableAutoPan: true, headerContent: document.createTextNode(selected.name), content: infoContent(selected, now) });
+      if (infoVehicle.current !== selected || infoCapabilities.current !== capabilities) {
+        info.current.setOptions({ disableAutoPan: true, headerContent: document.createTextNode(selected.name), content: infoContent(selected, now, capabilities) });
         infoVehicle.current = selected;
+        infoCapabilities.current = capabilities;
       }
     } else { info.current.close(); infoVehicle.current = null; }
-  }, [fleet, maps, loading, unauthorized, selectedId, selected, now, isMobile]);
+  }, [fleet, maps, loading, unauthorized, selectedId, selected, now, isMobile, capabilities]);
 
   useEffect(() => {
     if (selectedId != null && !selected) setSelectedId(null);
@@ -249,8 +266,9 @@ export default function LiveMap() {
       infoVehicle.current = null;
       if (selectedId != null) setPanelOpen(false);
     } else if (selected?.point && info.current && mapRef.current) {
-      info.current.setOptions({ disableAutoPan: true, headerContent: document.createTextNode(selected.name), content: infoContent(selected, now) });
+      info.current.setOptions({ disableAutoPan: true, headerContent: document.createTextNode(selected.name), content: infoContent(selected, now, capabilities) });
       infoVehicle.current = selected;
+      infoCapabilities.current = capabilities;
       info.current.open({ map: mapRef.current, anchor: markers.current.get(selected.id), shouldFocus: false });
     }
     // Solo el cambio de formato reabre la tarjeta; los refrescos conservan la vista.
@@ -263,6 +281,9 @@ export default function LiveMap() {
 
   return <AppShell me={me} active="map">
     {unauthorized ? <div className="app"><div className="error">Inicia sesión en <a href="/gui/login">el sistema</a></div></div> : loading ? <div className="app"><p className="skeleton">Cargando mapa…</p></div> :
+      <div className="live-map-layout">
+        <BalanceBanner balance={balance} />
+        {isMobile && <MapKpis summary={summary} />}
       <div className="live-map-page">
         <section className="live-map-canvas" aria-label="Mapa en vivo">
           <div ref={host} className="live-map-host" />
@@ -271,6 +292,7 @@ export default function LiveMap() {
           <button ref={panelToggle} className="map-panel-toggle" aria-expanded={panelOpen} aria-controls="map-vehicles" onClick={() => setPanelOpen(!panelOpen)}>Vehículos ({fleet.length})</button>
         </section>
         <aside id="map-vehicles" className={`map-vehicles${panelOpen ? " is-open" : ""}`} aria-label="Vehículos" onKeyDown={(event) => { if (event.key === "Escape") { setPanelOpen(false); panelToggle.current?.focus(); } }}>
+          {!isMobile && <MapKpis summary={summary} />}
           <div className="map-list-header">
             <div className="map-list-title"><h1>Mapa en vivo</h1><button className="map-panel-close" onClick={() => { setPanelOpen(false); panelToggle.current?.focus(); }} aria-label="Cerrar lista de vehículos"><Icon name="x" size={18} /> Cerrar</button></div>
             <p>{fleet.length - offline} en línea · {offline} fuera de línea</p>
@@ -294,7 +316,7 @@ export default function LiveMap() {
             </button>)}
           </div>
         </aside>
-      </div>}
-    {isMobile && selected && !unauthorized && <VehicleSheet key={selected.id} vehicle={selected} now={now} onClose={() => { setSelectedId(null); panelToggle.current?.focus(); }} />}
+      </div></div>}
+    {isMobile && selected && !unauthorized && <VehicleSheet key={selected.id} vehicle={selected} capabilities={capabilities} now={now} onClose={() => { setSelectedId(null); panelToggle.current?.focus(); }} />}
   </AppShell>;
 }

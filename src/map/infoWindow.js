@@ -1,3 +1,4 @@
+import { vehicleActions } from "./vehicleActions";
 import { createIcon } from "../components/Icon";
 import { batteryClass, coverageLabel, reportLabel, STATES } from "./fleet";
 
@@ -26,7 +27,7 @@ export async function copyCoordinates(value) {
   }
 }
 
-export function infoContent(vehicle, now) {
+export function infoContent(vehicle, now, capabilities) {
   const content = element("div", "", "live-map-info");
   const state = STATES[vehicle.state];
   const badge = element("span", state.label, "map-status map-badge");
@@ -43,6 +44,24 @@ export function infoContent(vehicle, now) {
   if (vehicle.description) content.append(element("p", vehicle.description, "map-info-secondary"));
   const coverage = coverageLabel(vehicle, now);
   if (coverage) content.append(element("p", coverage, "map-info-secondary"));
+  const details = vehicleActions(vehicle, capabilities);
+  if (details.mode) content.append(element("p", details.mode, "vehicle-mode"));
+  if (details.technical) {
+    const technical = element("p", details.technical, "map-info-secondary");
+    technical.prepend(createIcon("info", 16));
+    content.append(technical);
+  }
+  if (details.actions.length) {
+    const controls = element("div", "", "vehicle-actions map-info-actions");
+    for (const action of details.actions) {
+      const link = element("a", action.label, action.warning ? "vehicle-action-warning" : "");
+      link.href = action.href;
+      link.prepend(createIcon(action.icon, 16));
+      if (action.target) { link.target = action.target; link.rel = "noopener"; }
+      controls.append(link);
+    }
+    content.append(controls);
+  }
   const actions = element("div", "", "map-info-actions");
   const coords = `${vehicle.point.lat},${vehicle.point.lng}`;
   for (const [label, url, icon] of [["Waze", `https://waze.com/ul?ll=${coords}&navigate=yes`, "navigation"], ["Google Maps", `https://www.google.com/maps/search/?api=1&query=${coords}`, "map"]]) {

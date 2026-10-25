@@ -1,9 +1,10 @@
+import { vehicleActions } from "./vehicleActions";
 import Icon from "../components/Icon";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ageLabel, batteryClass, coverageLabel, reportLabel, STATES } from "./fleet";
 import { copyCoordinates } from "./infoWindow";
 
-export default function VehicleSheet({ vehicle, now, onClose }) {
+export default function VehicleSheet({ vehicle, now, onClose, capabilities }) {
   const sheet = useRef(null);
   const grabber = useRef(null);
   const drag = useRef(null);
@@ -12,6 +13,7 @@ export default function VehicleSheet({ vehicle, now, onClose }) {
   const [offset, setOffset] = useState(null);
   const [peek, setPeek] = useState(0);
   const [feedback, setFeedback] = useState("");
+  const details = vehicleActions(vehicle, capabilities);
   const state = STATES[vehicle.state];
   const coverage = coverageLabel(vehicle, now);
   const coords = vehicle.point ? `${vehicle.point.lat},${vehicle.point.lng}` : null;
@@ -92,6 +94,11 @@ export default function VehicleSheet({ vehicle, now, onClose }) {
       {vehicle.battery != null && <p className={batteryClass(vehicle.battery)}>Batería {vehicle.battery}%</p>}
       {vehicle.description && <p className="sheet-secondary">{vehicle.description}</p>}
       {coverage && <p className="sheet-secondary">{coverage}</p>}
+      {details.mode && <p className="vehicle-mode">{details.mode}</p>}
+      {details.technical && <p className="sheet-secondary"><Icon name="info" size={16} /> {details.technical}</p>}
+      {details.actions.length > 0 && <div className="vehicle-actions sheet-actions">
+        {details.actions.map((action) => <a key={action.label} href={action.href} target={action.target} rel={action.target ? "noopener" : undefined} className={action.warning ? "vehicle-action-warning" : undefined}><Icon name={action.icon} size={16} />{action.label}</a>)}
+      </div>}
       <div className="sheet-actions">
         {coords && <><a href={`https://waze.com/ul?ll=${coords}&navigate=yes`} target="_blank" rel="noopener"><Icon name="navigation" size={16} />Waze</a>
           <a href={`https://www.google.com/maps/search/?api=1&query=${coords}`} target="_blank" rel="noopener"><Icon name="map" size={16} />Google Maps</a>

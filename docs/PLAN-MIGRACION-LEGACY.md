@@ -175,6 +175,30 @@ Comandos sensibles (Ola 1) y la capa de permisos: diseño de Claude, implementac
   reiniciaba (abría solo la sección actual). Ahora los grupos abiertos se recuerdan (`localStorage`
   `protektor-sidebar-groups`); se quitaron estilos de la barra vieja en `mcp.css`.
 
+### 2026-10-24 — Ola 1 (parte A): paridad del mapa en vivo con el Visor General
+El usuario notó que al mapa v2 le faltan funciones del clásico. Inventario (`home_mod.php::getJSONPositions/kpis`, `homeV2.html`):
+
+| Función del clásico | Roles | v2 antes | Plan |
+|---|---|---|---|
+| Detener motor (justificación, SMS+Traccar) | 1,2,5 | no | enlace a la pantalla clásica `home/stop` (parte A); nativo en v2 (parte B, diseño Claude) |
+| Activar (modo SMS/STOP) | 1,2,5 | no | enlace a `home/activate` (A); nativo (B) |
+| Etiqueta "Modo actual" SMS/STOP/VOZ | todos | no | A |
+| Llamar a cabina (empresa con monitor_mode=1) | todos | no | A (`tel:`) |
+| Llamar (tipos Phone/Congelador) | todos | no | A |
+| Editar vehículo | 1,2,5 | no | A (enlace clásico) |
+| Coordenada manual | 1,2 | no | A (enlace clásico; la API ya tiene `manual-position`) |
+| Info técnica SIM · empresa · IMEI | 1,2 | no | A |
+| Indicadores: en línea, mantenimiento, SOS hoy | todos | parcial (solo en línea) | A (`/fleet/summary`) |
+| Aviso de saldo vencido + pago con tarjeta / WhatsApp | todos con deuda | no | A (`/account/balance`) |
+| Waze, Google Maps, batería, sin cobertura | todos | sí | — |
+| Ver rutas, copiar coordenadas, buscador, filtros, agrupación | — | sí (mejora v2) | — |
+
+Delegado a Codex en paralelo (API: campos `current_mode/monitor_mode/company_name/device_type`, `/fleet/summary`,
+`/account/balance`, capacidad `devices.edit`; web: acciones por capacidad, franja de indicadores, aviso de saldo).
+- **EN PRODUCCIÓN** (API `8358815`, 104 tests; web desplegada). Verificado en prod: `/fleet/summary` con datos reales
+  218 total / 163 en línea en 1,4 s sin caché (luego 60 s de caché); la API sí lee el esquema `traccar` (SOS).
+  Detener/Activar/Editar/Coordenada manual abren las pantallas clásicas (ya aseguradas). Pendiente parte B: comandos nativos en v2.
+
 ### Siguiente
 - Ola 1: abrir el acceso a v2 para roles 3-6 (repuntar/habilitar menu_child 38) y comandos de Tiempo real.
 - En paralelo (inicio de Ola 2): `report_daily_device` + endpoint de resumen en vivo para el dashboard.

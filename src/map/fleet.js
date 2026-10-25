@@ -48,6 +48,9 @@ export function joinFleet(devices, positions, now) {
     return {
       id: String(device.id), name: device.friendly_name?.trim() || device.name || position?.name || "Vehículo",
       plate: device.v_plate || position?.v_plate || "Sin placa", state, time,
+      current_mode: device.current_mode, monitor_mode: device.monitor_mode,
+      company_name: device.company_name, device_type: device.device_type,
+      sim_assigned: device.sim_assigned, imei: device.imei,
       ignition: device.ignition === 1 || device.ignition === 0 ? device.ignition : null,
       battery: Number.isFinite(Number(device.battery)) && Number(device.battery) > 0 ? Number(device.battery) : null,
       description: [device.v_brand, device.v_model, device.v_year].filter((value) => value != null && String(value).trim()).join(" "),
