@@ -159,6 +159,17 @@ Comandos sensibles (Ola 1) y la capa de permisos: diseño de Claude, implementac
   - **Codex → protektor-web** (agy sin cuota ese día): AppShell dinámico desde `/auth/navigation` (desplegables accesibles en
     escritorio; Mapa/Reportes/Alertas/Más en móvil; respaldo al menú fijo si la API falla).
 - Contrato compartido del endpoint: ver anexo A.
+- **Resultado (mismo día, EN PRODUCCIÓN)**: API `0099d82` (93 tests verdes; desplegada en
+  protektor-backend; `/auth/navigation` responde 401 sin credenciales) y web `1ae2f0e` (build limpio,
+  capturas roles 1 y 5 escritorio/móvil claro/oscuro sin errores de consola, rsync a `/var/www/protektor-v2`).
+  Las pantallas clásicas se marcan con ícono de enlace externo. Hoy solo roles 1-2 llegan a v2
+  (menu_child 38); abrir v2 a clientes es parte de la Ola 1.
+- Nota operativa: agy sin cuota → la parte web la hizo Codex; el sandbox de Codex necesita
+  `-c sandbox_workspace_write.network_access=true` para correr los tests contra MySQL local.
+
+### Siguiente
+- Ola 1: abrir el acceso a v2 para roles 3-6 (repuntar/habilitar menu_child 38) y comandos de Tiempo real.
+- En paralelo (inicio de Ola 2): `report_daily_device` + endpoint de resumen en vivo para el dashboard.
 
 ## Anexo A — Contrato `GET /api/v2/auth/navigation`
 Requiere principal (sesión PHPSESSID o API key). Respuesta 200:
