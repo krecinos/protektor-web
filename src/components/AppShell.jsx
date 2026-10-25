@@ -31,7 +31,9 @@ export default function AppShell({ me, active, children }) {
   });
   const [mobile, setMobile] = useState(() => window.matchMedia("(max-width: 767px)").matches);
   const [drawer, setDrawer] = useState(false);
-  const [expanded, setExpanded] = useState({});
+  const [expanded, setExpanded] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("protektor-sidebar-groups")) || {}; } catch { return {}; }
+  });
   const [popup, setPopup] = useState(null);
   const [tooltip, setTooltip] = useState(null);
   const sidebarRef = useRef(null);
@@ -65,9 +67,19 @@ export default function AppShell({ me, active, children }) {
   }, [identityKey]);
 
   useEffect(() => {
-    setExpanded({});
     setPopup(null);
   }, [identityKey, active]);
+
+  // La sección de la página actual arranca abierta y queda recordada como abierta.
+  useEffect(() => {
+    const open = sections.filter((section) => section.items.length > 1 && section.items.some(isActive) && expanded[section.key] === undefined);
+    if (open.length) setExpanded((value) => ({ ...value, ...Object.fromEntries(open.map((section) => [section.key, true])) }));
+  }, [sections]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Las páginas v2 recargan al navegar: recordar qué grupos abrió el usuario para que el menú no "salte".
+  useEffect(() => {
+    try { localStorage.setItem("protektor-sidebar-groups", JSON.stringify(expanded)); } catch { /* Preferencia opcional en WebViews. */ }
+  }, [expanded]);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 767px)");

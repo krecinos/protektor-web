@@ -171,6 +171,9 @@ Comandos sensibles (Ola 1) y la capa de permisos: diseño de Claude, implementac
 
 - Ajuste del usuario: navegación pasa de barra superior a **menú lateral izquierdo plegable** (ver §4).
 - Ajuste del usuario: se elimina la barra de pestañas inferior en móvil; solo menú ☰.
+- Ajuste: el menú "cambiaba" al entrar al Conector MCP porque cada página v2 recarga y el acordeón se
+  reiniciaba (abría solo la sección actual). Ahora los grupos abiertos se recuerdan (`localStorage`
+  `protektor-sidebar-groups`); se quitaron estilos de la barra vieja en `mcp.css`.
 
 ### Siguiente
 - Ola 1: abrir el acceso a v2 para roles 3-6 (repuntar/habilitar menu_child 38) y comandos de Tiempo real.

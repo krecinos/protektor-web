@@ -39,11 +39,6 @@
   .mcp-admin select { width: auto; margin-left: 8px; }
 }
 @media (max-width: 767px) {
-  .mcp-page .shell-bar { grid-template-rows: 52px; grid-template-areas: "brand account"; }
-  .mcp-page .shell-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; background: var(--surface-1); border-top: 1px solid var(--border); padding: 6px max(6px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left)); }
-  .mcp-page .shell-link { flex-direction: column; gap: 3px; font-size: 11px; }
-  .mcp-page .shell-link[aria-current="page"]::after { bottom: 0; }
-  .mcp-page .shell-content .app { padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
   .mcp-admin td[data-label]::before { content: attr(data-label) " · "; font-size: 11px; color: var(--text-caption); }
   .mcp-admin td { max-width: none; }
 }
