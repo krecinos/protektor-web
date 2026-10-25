@@ -692,3 +692,41 @@ button.primary:active:not(:disabled) { transform: translateY(0) scale(0.98); }
   .grid-tiles > *, .toolbar, .section, .table-card, .split > *, .map-list-header, .panel { animation: none !important; }
   .shell-aurora::before, .shell-aurora::after { animation: none !important; }
 }
+
+/* Shared role navigation: measured overflow and mobile bottom sheet. */
+.shell-bar { gap: 18px; }
+.shell-desktop-nav { flex: 1; }
+.shell-account { flex: none; }
+.shell-identity { max-width: 180px; }
+.shell-link { border: 0; background: transparent; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.shell-measure { position: fixed; visibility: hidden; pointer-events: none; display: flex; width: max-content; left: -10000px; }
+.shell-bottom-nav { display: none; }
+.shell-legacy { display: inline-flex; margin-left: auto; opacity: .65; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.shell-dropdown, .shell-sheet { position: fixed; z-index: 60; background: var(--surface-1); color: var(--text-primary); border: 1px solid var(--border); box-shadow: 0 16px 48px rgb(0 0 0 / 25%); overflow-y: auto; overscroll-behavior: contain; }
+.shell-dropdown { width: 320px; max-height: calc(100dvh - var(--nav-h) - 32px); border-radius: 14px; padding: 8px; }
+.shell-menu-group + .shell-menu-group { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 8px; }
+.shell-group-title { display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px; color: var(--text-secondary); font-size: 12px; font-weight: 700; }
+.shell-menu-item { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px 12px; border-radius: 8px; color: var(--text-primary); text-decoration: none; font-size: 14px; }
+.shell-menu-item:hover, .shell-menu-item:focus-visible, .shell-menu-item[aria-current] { background: var(--series-1-soft); }
+.shell-menu-item:focus-visible, .shell-bottom-nav :focus-visible, .shell-sheet button:focus-visible { outline: 2px solid var(--series-1); outline-offset: -2px; }
+.shell-menu-identity { margin: 4px 12px 8px; color: var(--text-secondary); font-size: 12px; overflow-wrap: anywhere; }
+.shell-sheet-backdrop { position: fixed; inset: 0; z-index: 50; background: rgb(0 0 0 / 48%); }
+.shell-sheet { inset: auto 0 0; max-height: 80dvh; border-radius: 20px 20px 0 0; padding: 12px 16px max(20px, env(safe-area-inset-bottom)); }
+.shell-sheet-heading { display: flex; justify-content: space-between; align-items: center; padding-left: 12px; }
+.shell-sheet-heading button { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; }
+@media (max-width: 767px) {
+  :root { --nav-h: calc(56px + env(safe-area-inset-top, 0px)); }
+  .shell-bar { display: flex; height: 56px; gap: 12px; }
+  .shell-desktop-nav { display: none; }
+  .shell-bottom-nav { display: flex; position: fixed; inset: auto 0 0; z-index: 40; background: var(--surface-1); border-top: 1px solid var(--border); padding: 4px max(8px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+  .shell-bottom-nav .shell-link { flex: 1; flex-direction: column; gap: 3px; min-height: 52px; font-size: 12px; }
+  .shell-bottom-nav .shell-link::after { display: none; }
+  .shell-bottom-nav .shell-legacy { display: none; }
+  .shell-content { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  .shell-theme { width: 44px; height: 44px; }
+}
+@media (max-width: 767px) {
+  .live-map-page { height: calc(100vh - var(--nav-h) - 64px - env(safe-area-inset-bottom, 0px)); height: calc(100dvh - var(--nav-h) - 64px - env(safe-area-inset-bottom, 0px)); }
+  .sheet-root { bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+}
