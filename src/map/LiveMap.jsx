@@ -2,21 +2,15 @@ import { useNavigation } from "../components/navigation";
 import { BalanceBanner, MapKpis } from "./MapNotices";
 import Icon from "../components/Icon";
 import { useEffect, useMemo, useRef, useState } from "react";
-import VehicleSheet from "./VehicleSheet";
+import VehicleCard from "./VehicleCard";
+import { createPortal } from "react-dom";
 import AppShell from "../components/AppShell";
 import { api } from "../api";
 import { loadGoogleMaps } from "../lib/googleMaps";
-import { ageLabel, batteryClass, coverageLabel, joinFleet, STATES } from "./fleet";
-import { infoContent } from "./infoWindow";
+import { joinFleet, STATES } from "./fleet";
 import { clusterIcon, markerIcon } from "./markerIcon";
 import { DARK_MAP_STYLE } from "./darkMapStyle";
 import { getTheme } from "../lib/theme";
-
-function Highlight({ text, query }) {
-  const index = text.toLocaleLowerCase("es").indexOf(query.toLocaleLowerCase("es"));
-  if (!query || index < 0) return text;
-  return <>{text.slice(0, index)}<mark>{text.slice(index, index + query.length)}</mark>{text.slice(index + query.length)}</>;
-}
 
 export default function LiveMap() {
   const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 767px)").matches);
@@ -43,6 +37,8 @@ export default function LiveMap() {
   const clusters = useRef([]);
   const recluster = useRef(null);
   const info = useRef(null);
+  const [infoNode] = useState(() => document.createElement("div"));
+  const cardRefs = useRef(new Map());
   const infoVehicle = useRef(null);
   const infoCapabilities = useRef(null);
   const balanceRequest = useRef(null);
@@ -108,7 +104,7 @@ export default function LiveMap() {
     let marker = markers.current.get(vehicle.id);
     if (!marker) {
       marker = new maps.Marker();
-      marker.addListener("click", () => selectRef.current(vehicle.id));
+      marker.addListener("click", () => selectRef.current(vehicle.id, true));
       markers.current.set(vehicle.id, marker);
     }
     marker.setOptions({
@@ -121,7 +117,8 @@ export default function LiveMap() {
     return marker;
   }
 
-  function select(id) {
+  function select(id, fromPin = false) {
+    if (fromPin) { setQuery(""); setFilter("all"); }
     const vehicle = fleet.find((v) => v.id === id);
     setSelectedId(id);
     setPanelOpen(false);
@@ -136,7 +133,7 @@ export default function LiveMap() {
       infoVehicle.current = null;
       return;
     }
-    info.current.setOptions({ headerContent: document.createTextNode(vehicle.name), content: infoContent(vehicle, Date.now(), capabilities) });
+    info.current.setOptions({ headerDisabled: true, content: infoNode });
     infoVehicle.current = vehicle;
     infoCapabilities.current = capabilities;
     info.current.setOptions({ disableAutoPan: false });
@@ -150,7 +147,7 @@ export default function LiveMap() {
     const onTheme = (event) => map.setOptions({ styles: event.detail === "dark" ? DARK_MAP_STYLE : null });
     window.addEventListener("protektor:theme", onTheme);
     mapRef.current = map;
-    info.current = new maps.InfoWindow({ disableAutoPan: true, maxWidth: 280 });
+    info.current = new maps.InfoWindow({ disableAutoPan: true, maxWidth: 440 });
     const close = info.current.addListener("closeclick", () => setSelectedId(null));
     const idle = map.addListener("idle", () => recluster.current?.());
     const projectionChanged = map.addListener("projection_changed", () => recluster.current?.());
@@ -249,7 +246,7 @@ export default function LiveMap() {
     if (!isMobile && selected?.point) {
       // La apertura ajusta la tarjeta; solo los nuevos datos se refrescan sin mover la vista.
       if (infoVehicle.current !== selected || infoCapabilities.current !== capabilities) {
-        info.current.setOptions({ disableAutoPan: true, headerContent: document.createTextNode(selected.name), content: infoContent(selected, now, capabilities) });
+        info.current.setOptions({ disableAutoPan: true, headerDisabled: true, content: infoNode });
         infoVehicle.current = selected;
         infoCapabilities.current = capabilities;
       }
@@ -266,7 +263,7 @@ export default function LiveMap() {
       infoVehicle.current = null;
       if (selectedId != null) setPanelOpen(false);
     } else if (selected?.point && info.current && mapRef.current) {
-      info.current.setOptions({ disableAutoPan: true, headerContent: document.createTextNode(selected.name), content: infoContent(selected, now, capabilities) });
+      info.current.setOptions({ disableAutoPan: true, headerDisabled: true, content: infoNode });
       infoVehicle.current = selected;
       infoCapabilities.current = capabilities;
       info.current.open({ map: mapRef.current, anchor: markers.current.get(selected.id), shouldFocus: false });
@@ -279,44 +276,40 @@ export default function LiveMap() {
     if (panelOpen) searchRef.current?.focus();
   }, [panelOpen]);
 
+  useEffect(() => {
+    if (!isMobile && selectedId) cardRefs.current.get(selectedId)?.scrollIntoView({ block: "nearest" });
+  }, [selectedId, query, filter, isMobile]);
+
+  const controls = <div className="map-list-header">
+    <div className="map-search-row">
+      <label className="map-search"><Icon name="search" size={18} /><input ref={searchRef} aria-label="Buscar por nombre o placa" type="search" value={query} onChange={(event) => { setQuery(event.target.value); if (isMobile) setPanelOpen(true); }} placeholder="Nombre o placa" /></label>
+      {isMobile && <button ref={panelToggle} className="map-view-toggle" aria-controls="map-vehicles" aria-expanded={panelOpen} onClick={() => setPanelOpen(!panelOpen)}>{panelOpen ? "Mapa" : "Lista"}</button>}
+    </div>
+    <div className="toolbar map-filters">{[["all", "Todos"], ["online", "En línea"], ["offline", "Fuera de línea"]].map(([key, label]) => <button key={key} aria-pressed={filter === key} onClick={() => { setFilter(key); if (isMobile) setPanelOpen(true); }}>{label}</button>)}</div>
+    <small>{fleet.length - offline} en línea · {offline} fuera de línea</small>
+  </div>;
+
   return <AppShell me={me} active="map">
     {unauthorized ? <div className="app"><div className="error">Inicia sesión en <a href="/gui/login">el sistema</a></div></div> : loading ? <div className="app"><p className="skeleton">Cargando mapa…</p></div> :
       <div className="live-map-layout">
-        <BalanceBanner balance={balance} />
-        {isMobile && <MapKpis summary={summary} />}
-      <div className="live-map-page">
-        <section className="live-map-canvas" aria-label="Mapa en vivo">
-          <div ref={host} className="live-map-host" />
-          {(!maps || mapError) && <p className="map-notice" role="status">{mapError || "Cargando mapa…"}</p>}
-          {Object.values(failures).some(Boolean) && <p className="map-notice map-offline" role="status">Sin conexión, reintentando…</p>}
-          <button ref={panelToggle} className="map-panel-toggle" aria-expanded={panelOpen} aria-controls="map-vehicles" onClick={() => setPanelOpen(!panelOpen)}>Vehículos ({fleet.length})</button>
-        </section>
-        <aside id="map-vehicles" className={`map-vehicles${panelOpen ? " is-open" : ""}`} aria-label="Vehículos" onKeyDown={(event) => { if (event.key === "Escape") { setPanelOpen(false); panelToggle.current?.focus(); } }}>
-          {!isMobile && <MapKpis summary={summary} />}
-          <div className="map-list-header">
-            <div className="map-list-title"><h1>Mapa en vivo</h1><button className="map-panel-close" onClick={() => { setPanelOpen(false); panelToggle.current?.focus(); }} aria-label="Cerrar lista de vehículos"><Icon name="x" size={18} /> Cerrar</button></div>
-            <p>{fleet.length - offline} en línea · {offline} fuera de línea</p>
-            <label htmlFor="vehicle-search"><Icon name="search" size={16} /> Buscar por nombre o placa</label>
-            <input ref={searchRef} id="vehicle-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nombre o placa" />
-            <div className="toolbar map-filters">{[["all", "Todos"], ["online", "En línea"], ["offline", "Fuera de línea"]].map(([key, label]) => <button key={key} aria-pressed={filter === key} onClick={() => setFilter(key)}>{label}</button>)}</div>
-          </div>
-          <div className="map-list">
-            {!fleet.some((v) => v.point) && <p className="map-empty">No hay vehículos con posición</p>}
-            {fleet.length > 0 && !filtered.length && <p className="map-empty">No hay vehículos que coincidan con tu búsqueda.</p>}
-            {filtered.map((vehicle) => <button key={vehicle.id} className="map-vehicle" aria-pressed={selectedId === vehicle.id} onClick={() => select(vehicle.id)} style={{ "--vehicle-color": STATES[vehicle.state].color }}>
-              <span className="map-vehicle-name"><span className="map-dot" aria-hidden="true" /><strong><Highlight text={vehicle.name} query={search} /></strong></span>
-              <span className="map-vehicle-plate"><Highlight text={vehicle.plate} query={search} /></span>
-              {vehicle.description && <span>{vehicle.description}</span>}
-              <span className="map-status map-badge">{STATES[vehicle.state].label}</span>
-              {vehicle.battery != null && <span className={batteryClass(vehicle.battery)}>Batería {vehicle.battery}%</span>}
-              {coverageLabel(vehicle, now) && <span>{coverageLabel(vehicle, now)}</span>}
-              <span>{ageLabel(vehicle.time, now)} · {vehicle.speed}</span>
-              <span className="map-location" title={vehicle.location}>{vehicle.location}</span>
-              {!vehicle.point && <span>Sin posición válida</span>}
-            </button>)}
-          </div>
-        </aside>
-      </div></div>}
-    {isMobile && selected && !unauthorized && <VehicleSheet key={selected.id} vehicle={selected} capabilities={capabilities} now={now} onClose={() => { setSelectedId(null); panelToggle.current?.focus(); }} />}
+        {isMobile && <>{controls}<MapKpis summary={summary} /><BalanceBanner balance={balance} /></>}
+        <div className="live-map-page">
+          <section className="live-map-canvas" aria-label="Mapa en vivo" aria-hidden={isMobile && panelOpen}>
+            <div ref={host} className="live-map-host" />
+            {(!maps || mapError) && <p className="map-notice" role="status">{mapError || "Cargando mapa…"}</p>}
+            {Object.values(failures).some(Boolean) && <p className="map-notice map-offline" role="status">Sin conexión, reintentando…</p>}
+            {isMobile && selected && !panelOpen && <div className="map-floating-card" onKeyDown={(e) => { if (e.key === "Escape") setSelectedId(null); }}><VehicleCard key={selected.id} vehicle={selected} now={now} capabilities={capabilities} onSelect={() => select(selected.id)} onClose={() => { setSelectedId(null); panelToggle.current?.focus(); }} /></div>}
+          </section>
+          <aside id="map-vehicles" className={`map-vehicles${panelOpen ? " is-open" : ""}`} aria-label="Vehículos" onKeyDown={(e) => { if (e.key === "Escape") { setPanelOpen(false); panelToggle.current?.focus(); } }}>
+            {!isMobile && <>{controls}<MapKpis summary={summary} /><BalanceBanner balance={balance} /></>}
+            <div className="map-list">
+              {!fleet.some((v) => v.point) && <p className="map-empty">No hay vehículos con posición</p>}
+              {fleet.length > 0 && !filtered.length && <p className="map-empty">No hay vehículos que coincidan con tu búsqueda.</p>}
+              {filtered.map((vehicle) => <div key={vehicle.id} ref={(node) => { if (node) cardRefs.current.set(vehicle.id, node); else cardRefs.current.delete(vehicle.id); }}><VehicleCard vehicle={vehicle} now={now} capabilities={capabilities} selected={selectedId === vehicle.id} onSelect={() => select(vehicle.id)} /></div>)}
+            </div>
+          </aside>
+        </div>
+      </div>}
+    {!isMobile && selected && createPortal(<VehicleCard key={selected.id} vehicle={selected} now={now} capabilities={capabilities} onSelect={() => select(selected.id)} onClose={() => { info.current?.close(); setSelectedId(null); }} />, infoNode)}
   </AppShell>;
 }

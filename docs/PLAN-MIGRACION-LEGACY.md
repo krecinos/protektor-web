@@ -199,6 +199,13 @@ Delegado a Codex en paralelo (API: campos `current_mode/monitor_mode/company_nam
   218 total / 163 en línea en 1,4 s sin caché (luego 60 s de caché); la API sí lee el esquema `traccar` (SOS).
   Detener/Activar/Editar/Coordenada manual abren las pantallas clásicas (ya aseguradas). Pendiente parte B: comandos nativos en v2.
 
+- Ajuste del usuario (mismo día): la interacción del mapa era incómoda (buscar abajo, varios clics, scroll para
+  ver "Detener motor"). Rediseño "todo en un mismo cuadrito" como el clásico: tarjeta compacta por vehículo
+  (`VehicleCard`) con datos en 2 líneas, etiquetas y **fila de botones-ícono siempre visible**; la misma tarjeta
+  en la lista y en el InfoWindow; buscador arriba del panel; en móvil se eliminó la hoja arrastrable: tarjeta
+  flotante al tocar un pin y botón Lista/Mapa. Regla de diseño para próximas pantallas: acciones a la vista,
+  mínimo de clics, sin scroll para lo principal.
+
 ### Siguiente
 - Ola 1: abrir el acceso a v2 para roles 3-6 (repuntar/habilitar menu_child 38) y comandos de Tiempo real.
 - En paralelo (inicio de Ola 2): `report_daily_device` + endpoint de resumen en vivo para el dashboard.

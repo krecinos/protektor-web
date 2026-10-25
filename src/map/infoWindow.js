@@ -1,20 +1,9 @@
-import { vehicleActions } from "./vehicleActions";
-import { createIcon } from "../components/Icon";
-import { batteryClass, coverageLabel, reportLabel, STATES } from "./fleet";
-
-function element(tag, text, className) {
-  const node = document.createElement(tag);
-  if (text) node.textContent = text;
-  if (className) node.className = className;
-  return node;
-}
-
 export async function copyCoordinates(value) {
   try {
     if (navigator.clipboard) { await navigator.clipboard.writeText(value); return; }
   } catch { /* Algunos navegadores deniegan el portapapeles incluso en HTTPS. */ }
   const previous = document.activeElement;
-  const input = element("textarea");
+  const input = document.createElement("textarea");
   input.value = value;
   input.style.cssText = "position:fixed;left:-9999px;top:0";
   document.body.appendChild(input);
@@ -25,66 +14,4 @@ export async function copyCoordinates(value) {
     input.remove();
     previous?.focus();
   }
-}
-
-export function infoContent(vehicle, now, capabilities) {
-  const content = element("div", "", "live-map-info");
-  const state = STATES[vehicle.state];
-  const badge = element("span", state.label, "map-status map-badge");
-  badge.style.setProperty("--vehicle-color", state.color);
-  const summary = element("div", "", "map-info-summary");
-  summary.append(badge, element("span", vehicle.speed));
-  content.append(summary);
-  if (vehicle.ignition === 1 || vehicle.ignition === 0) content.append(element("p", `Motor: ${vehicle.ignition === 1 ? "Encendido" : "Apagado"}`));
-  content.append(element("p", `Último reporte: ${reportLabel(vehicle.time, now)}`));
-  const location = element("p", vehicle.location, "map-info-location");
-  location.title = vehicle.location;
-  content.append(location, element("p", `${vehicle.point.lat}, ${vehicle.point.lng}`, "map-info-secondary"));
-  if (vehicle.battery != null) content.append(element("p", `Batería ${vehicle.battery}%`, batteryClass(vehicle.battery)));
-  if (vehicle.description) content.append(element("p", vehicle.description, "map-info-secondary"));
-  const coverage = coverageLabel(vehicle, now);
-  if (coverage) content.append(element("p", coverage, "map-info-secondary"));
-  const details = vehicleActions(vehicle, capabilities);
-  if (details.mode) content.append(element("p", details.mode, "vehicle-mode"));
-  if (details.technical) {
-    const technical = element("p", details.technical, "map-info-secondary");
-    technical.prepend(createIcon("info", 16));
-    content.append(technical);
-  }
-  if (details.actions.length) {
-    const controls = element("div", "", "vehicle-actions map-info-actions");
-    for (const action of details.actions) {
-      const link = element("a", action.label, action.warning ? "vehicle-action-warning" : "");
-      link.href = action.href;
-      link.prepend(createIcon(action.icon, 16));
-      if (action.target) { link.target = action.target; link.rel = "noopener"; }
-      controls.append(link);
-    }
-    content.append(controls);
-  }
-  const actions = element("div", "", "map-info-actions");
-  const coords = `${vehicle.point.lat},${vehicle.point.lng}`;
-  for (const [label, url, icon] of [["Waze", `https://waze.com/ul?ll=${coords}&navigate=yes`, "navigation"], ["Google Maps", `https://www.google.com/maps/search/?api=1&query=${coords}`, "map"]]) {
-    const link = element("a", label);
-    link.prepend(createIcon(icon, 16));
-    link.href = url;
-    link.target = "_blank";
-    link.rel = "noopener";
-    actions.append(link);
-  }
-  const copy = element("button", "Copiar");
-  copy.prepend(createIcon("copy", 16));
-  copy.type = "button";
-  const feedback = element("span", "", "map-copy-feedback");
-  feedback.setAttribute("role", "status");
-  copy.onclick = async () => {
-    try { await copyCoordinates(coords); feedback.textContent = "Coordenadas copiadas"; }
-    catch { feedback.textContent = "No se pudo copiar. Selecciona las coordenadas para copiarlas."; }
-  };
-  const routes = element("a", "Ver rutas");
-  routes.prepend(createIcon("route", 16));
-  routes.href = `/gui/monitor/routes/${encodeURIComponent(vehicle.id)}`;
-  actions.append(copy, routes);
-  content.append(actions, feedback);
-  return content;
 }

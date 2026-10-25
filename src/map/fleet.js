@@ -53,7 +53,7 @@ export function joinFleet(devices, positions, now) {
       sim_assigned: device.sim_assigned, imei: device.imei,
       ignition: device.ignition === 1 || device.ignition === 0 ? device.ignition : null,
       battery: Number.isFinite(Number(device.battery)) && Number(device.battery) > 0 ? Number(device.battery) : null,
-      description: [device.v_brand, device.v_model, device.v_year].filter((value) => value != null && String(value).trim()).join(" "),
+      description: [device.v_year, device.v_brand, device.v_model].filter((value) => value != null && String(value).trim()).join(" · "),
       point: valid ? { lat, lng } : null,
       speed: position?.speed != null && Number.isFinite(Number(position.speed)) ? `${Math.round(Number(position.speed))} km/h` : "Sin velocidad",
       location: position?.location || "Sin ubicación",

@@ -1,4 +1,4 @@
-// Un mismo contrato para el DOM de Google Maps y la hoja React.
+// Contrato de acciones compartido por todas las tarjetas de vehículos.
 export function vehicleActions(vehicle, capabilities) {
   const can = (name) => Array.isArray(capabilities) ? capabilities.includes(name) : capabilities?.[name] === true;
   const id = encodeURIComponent(vehicle.id);
