@@ -1,195 +1,26 @@
-import AppShell from "./components/AppShell";
-import { useEffect, useMemo, useState } from "react";
-import { api, ApiError, dateRange, fillMissingDays } from "./api";
-import DistanceChart from "./components/DistanceChart";
-import FleetTable from "./components/FleetTable";
-import { useCountUp } from "./lib/useCountUp";
-
-const RANGES = [
-  { days: 7, label: "7 días" },
-  { days: 14, label: "14 días" },
-  { days: 30, label: "30 días" },
-];
-
-// Indicador: número solo, sin gráfico. Es la forma correcta cuando el dato es
-// un titular, no una distribución.
-function Tile({ label, value, unit, foot }) {
-  const animated = useCountUp(Number.isFinite(value) ? value : 0);
-  return (
-    <div className="card tile">
-      <div className="label">{label}</div>
-      <div className="value">
-        {Number.isFinite(value) ? Math.round(animated).toLocaleString("es-GT") : value}
-        {unit ? <span className="unit">{unit}</span> : null}
-      </div>
-      {foot ? <div className="foot">{foot}</div> : null}
-    </div>
-  );
-}
-
+import { useCallback, useMemo, useState } from 'react';
+import AppShell from './components/AppShell';
+import FleetTable from './components/FleetTable';
+import DistanceChart from './components/DistanceChart';
+import useFleet from './components/Dashboard/useFleet';
+import { joinFleet, matches, STATES, exact } from './components/Dashboard/model';
 export default function App() {
-  const [me, setMe] = useState(null);
-  const [devices, setDevices] = useState([]);
-  const [positions, setPositions] = useState([]);
-  const [maintenance, setMaintenance] = useState([]);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  const [selectedId, setSelectedId] = useState(null);
-  const [days, setDays] = useState(7);
-  const [distance, setDistance] = useState([]);
-  const [distLoading, setDistLoading] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const [who, devs, pos, maint] = await Promise.all([
-          api.whoami(),
-          api.devices(),
-          api.positions(),
-          api.maintenanceStatus(),
-        ]);
-        if (!alive) return;
-        setMe(who);
-        setDevices(devs.items ?? []);
-        setPositions(pos ?? []);
-        setMaintenance(maint ?? []);
-        setSelectedId((devs.items ?? [])[0]?.id ?? null);
-      } catch (e) {
-        if (alive) setError(e);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (selectedId == null) return;
-    let alive = true;
-    setDistLoading(true);
-    const [start, end] = dateRange(days);
-    api
-      .distance(selectedId, start, end)
-      .then((d) => alive && setDistance(fillMissingDays(d ?? [], days)))
-      .catch(() => alive && setDistance([]))
-      .finally(() => alive && setDistLoading(false));
-    return () => {
-      alive = false;
-    };
-  }, [selectedId, days]);
-
-  const kpis = useMemo(() => {
-    const active = devices.filter((d) => d.status === 1).length;
-    const cutoff = Date.now() - 24 * 3600 * 1000;
-    const reporting = positions.filter((p) => p.date && new Date(p.date).getTime() > cutoff).length;
-    const overdue = maintenance.filter((m) =>
-      (m.services ?? []).some((s) => s.status === "overdue"),
-    ).length;
-    const totalKm = distance.reduce((sum, d) => sum + d.km, 0);
-    return { active, reporting, overdue, totalKm };
-  }, [devices, positions, maintenance, distance]);
-
-  if (loading) {
-    return (
-      <AppShell me={me} active="fleet">
-        <div className="app">
-          <div className="grid-tiles" role="status" aria-label="Cargando tablero">
-            {[0, 1, 2, 3].map((i) => <div key={i} className="card tile sk" />)}
-          </div>
-          <div className="card sk tall" />
-        </div>
-      </AppShell>
-    );
-  }
-
-  if (error) {
-    const noSession = error instanceof ApiError && error.status === 401;
-    return (
-      <AppShell me={me} active="fleet">
-        <div className="app">
-          <div className="error">
-            <strong>{noSession ? "Sesión no válida" : "No se pudo cargar el tablero"}</strong>
-            <p style={{ marginBottom: 0, color: "var(--text-secondary)", fontSize: 14 }}>
-              {noSession ? (
-                <>
-                  Inicia sesión en <a href="/gui/login">el sistema</a> y vuelve a esta página.
-                </>
-              ) : (
-                error.detail || error.message
-              )}
-            </p>
-          </div>
-        </div>
-      </AppShell>
-    );
-  }
-
-  const selected = devices.find((d) => d.id === selectedId);
-  const selectedName = selected?.friendly_name?.trim() || selected?.name?.trim() || "vehículo";
-
-  return (
-    <AppShell me={me} active="fleet">
-      <div className="app">
-        <header className="topbar">
-          <h1>Tablero de flota</h1>
-          <div className="who">
-            {me?.company_name ?? "—"}
-            {me?.role_name ? ` · ${me.role_name}` : ""}
-          </div>
-        </header>
-
-        <div className="grid-tiles">
-          <Tile label="Vehículos activos" value={kpis.active} foot={`${devices.length} en total`} />
-          <Tile
-            label="Reportando (24 h)"
-            value={kpis.reporting}
-            foot={
-              kpis.active - kpis.reporting > 0
-                ? `${kpis.active - kpis.reporting} sin reportar`
-                : "toda la flota al día"
-            }
-          />
-          <Tile label="Mantenimientos vencidos" value={kpis.overdue} foot="vehículos con servicio pendiente" />
-          <Tile
-            label={`Kilometraje (${days} d)`}
-            value={Math.round(kpis.totalKm)}
-            unit="km"
-            foot={selected ? selectedName : "—"}
-          />
-        </div>
-
-        {/* Filtros en una fila, arriba de los gráficos. */}
-        <div className="toolbar">
-          {RANGES.map((r) => (
-            <button
-              key={r.days}
-              aria-pressed={days === r.days}
-              onClick={() => setDays(r.days)}
-            >
-              {r.label}
-            </button>
-          ))}
-          {distLoading ? <span className="muted" style={{ fontSize: 12 }}>actualizando…</span> : null}
-        </div>
-
-        <DistanceChart
-          data={distance}
-          title="Kilometraje diario"
-          subtitle={selected ? selectedName : undefined}
-        />
-
-        <FleetTable
-          devices={devices}
-          positions={positions}
-          maintenance={maintenance}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-        />
-      </div>
-    </AppShell>
-  );
+  const { data, loading, refreshing, error, now, updated, refresh } = useFleet();
+  const [filter, setFilter] = useState('all'), [selectedId, setSelectedId] = useState(null), [expired, setExpired] = useState(false);
+  const expire = useCallback(() => setExpired(true), []);
+  const units = useMemo(() => joinFleet(data?.devices ?? [], data?.positions ?? [], data?.maintenance, now), [data, now]);
+  const selected = units.find(u => u.id === selectedId);
+  const session = expired || error?.status === 401;
+  const kpis = [['all', 'Total de unidades', 'Activas en el catálogo'], ...Object.entries(STATES).filter(([key]) => key !== 'unknown' || units.some(u => u.state === key)).map(([key, label]) => [key, label, key === 'stale' ? '>24 h o sin fecha válida' : key === 'unknown' ? 'Telemetría insuficiente' : 'Según último reporte']), ['overdue', 'Mant. vencido', 'Unidades con servicio vencido'], ['soon', 'Mant. próximo', 'Próximo según API (≤15 días)']];
+  return <AppShell me={session ? null : data?.me} active="fleet"><div className="app fleet-dashboard">
+    <header className="fleet-heading"><div><p className="fleet-eyebrow">OPERACIÓN / RESUMEN</p><h1>Tablero de flota</h1><p className="muted">Estado de tus unidades y prioridades de atención.</p></div><div className="fleet-refresh"><button disabled={refreshing} onClick={refresh}>{refreshing ? 'Actualizando…' : 'Actualizar'}</button><small title={exact(updated)}>{updated ? `Actualizado ${new Intl.DateTimeFormat('es-GT', { timeZone: 'America/Guatemala', timeStyle: 'short' }).format(updated)} · GT` : 'Refresco cada 60 s'}<br />Se pausa al ocultar la pestaña</small></div></header>
+    {session ? <div className="error" role="alert"><h2>Tu sesión ha expirado</h2><p>Inicia sesión para volver a consultar tu flota.</p><a href="/gui/login">Iniciar sesión</a></div> : loading ? <div aria-label="Cargando tablero" role="status"><div className="fleet-kpis">{Array.from({ length: 7 }, (_, i) => <div key={i} className="card sk" />)}</div><div className="card sk tall" /></div> : <>
+      {error && <div className="error" role="alert"><strong>{data ? 'No se pudo actualizar. Se muestran los últimos datos recibidos.' : 'No se pudo cargar el tablero.'}</strong><p>Revisa la conexión e intenta nuevamente.</p><button onClick={refresh}>Reintentar</button></div>}
+      {data && <>{data.maintenance === null && <div className="error" role="alert">Mantenimiento no disponible; sus indicadores no representan cero. <button onClick={refresh}>Reintentar</button></div>}
+      <div className="fleet-kpis">{kpis.map(([key, label, description]) => <button key={key} className={`card fleet-kpi ${key}`} data-testid={`kpi-${key}`} aria-pressed={filter === key} title={description} onClick={() => { setFilter(key); }}><span>{label}</span><strong>{['overdue', 'soon'].includes(key) && data.maintenance === null ? '—' : units.filter(u => matches(u, key)).length}</strong><small>{description}</small></button>)}</div>
+      <FleetTable units={units} filter={filter} setFilter={setFilter} now={now} selectedId={selectedId} onSelect={setSelectedId} />
+      {selected ? <DistanceChart key={selected.id} unit={selected} onSessionExpired={expire} /> : units.length > 0 && <p className="fleet-hint">Selecciona «Km» en una unidad para consultar su distancia diaria.</p>}
+      <p className="fleet-hint">Los estados operativos suman el total. Mantenimiento cuenta unidades, puede coincidir con cualquier estado y una unidad puede tener servicios vencidos y próximos.</p></>}
+    </>}
+  </div></AppShell>;
 }

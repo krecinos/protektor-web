@@ -18,7 +18,7 @@ node scripts/screenshot.mjs "<PHPSESSID>"   # capturas claro/oscuro + errores de
 
 ## Reglas
 - Nunca guardar API keys ni secretos en el front (el JS es público).
-- Mobile-first: <768px usa barra inferior; respetar `safe-area-inset` (la app móvil del cliente es un WebView).
+- Mobile-first: <768px la navegación es solo por el menú lateral plegable; respetar `safe-area-inset` (la app móvil del cliente es un WebView).
 - Sin suite de tests: criterio de aceptación = `npm run build` sin errores + captura revisada.
 
 ## Prohibido para agentes delegados

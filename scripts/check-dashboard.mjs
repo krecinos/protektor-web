@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import { reportTime, joinFleet, matches, relative } from '../src/components/Dashboard/model.js';
+import { ageLabel } from '../src/map/fleet.js';
+import { dateRange, fillMissingDays } from '../src/api.js';
+import { mockRequest } from '../src/dev/fixtures.js';
+const now = Date.parse('2026-11-07T12:00:00Z');
+assert.equal(reportTime('2026-11-07T06:00:00'), now);
+assert.equal(reportTime('2026-11-07T12:00:00Z'), now);
+assert.deepEqual(dateRange(7, new Date('2026-11-07T02:00:00Z')), ['2026-10-31T00:00:00', '2026-11-06T23:59:59']);
+assert.equal(fillMissingDays([], 7).length, 7);
+const devices = Array.from({ length: 7 }, (_, i) => ({ id: i, status: i === 6 ? 0 : 1, ignition: i === 2 ? 0 : i === 5 ? null : 1, battery: i === 0 ? 0 : null }));
+const dates = ['2026-11-07T06:00:00', '2026-11-07T06:00:00', '2026-11-07T06:00:00', '2026-11-06T05:59:59', null, '2026-11-07T08:00:00'];
+const units = joinFleet(devices, dates.map((date, device_id) => ({ device_id, date, speed: device_id === 0 ? '45' : '0' })), [{ device_id: 0, services: [{ status: 'overdue' }, { status: 'soon' }] }], now);
+assert.deepEqual(units.map(u => u.state), ['moving', 'idle', 'off', 'stale', 'stale', 'unknown']);
+assert.deepEqual(units.map(u => u.ignition), [1, 1, 0, null, null, null]);
+for (const [minutes, label] of [[0, '0 min'], [1, '1 min'], [2, '2 min'], [59, '59 min'], [60, '1 h'], [120, '2 h'], [1439, '23 h'], [1440, '1 día'], [2880, '2 días']]) {
+  for (const format of [relative, ageLabel]) assert.equal(format(now - minutes * 60000, now), `hace ${label}`);
+}
+assert.equal(relative(NaN, now), 'Sin reporte válido');
+assert.equal(relative(now + 120000, now), 'Fecha futura');
+assert.equal(units[0].battery, 0);
+assert.equal(units[1].battery, null);
+assert.equal(units.filter(u => matches(u, 'overdue')).length, 1);
+assert.equal(units.filter(u => matches(u, 'soon')).length, 1);
+globalThis.location = { search: '', origin: 'http://localhost' };
+const devs = await mockRequest('/fleet/devices?offset=0&limit=500');
+const fleet = joinFleet(devs.items, await mockRequest('/fleet/positions'), await mockRequest('/maintenance/status'), Date.now());
+assert.equal(fleet.length, 150);
+const counts = Object.fromEntries(['moving', 'idle', 'off', 'stale', 'unknown'].map(key => [key, fleet.filter(u => matches(u, key)).length]));
+assert.equal(Object.values(counts).reduce((a, b) => a + b), 150);
+console.log('OK: UTC−6, 7 días exactos, estados, ignición confiable, singular/plural relativo, exclusión de inactivos, batería cero, mantenimiento superpuesto y 150 fixtures.', counts);

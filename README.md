@@ -17,26 +17,33 @@ La API también existe en `api.protektor.com.gt` con autenticación por API key,
 
 ## Qué muestra
 
-Tablero de flota para el usuario que ya inició sesión en el GUI:
+El tablero usa todas las unidades **activas** del catálogo paginado. KPIs y lista comparten un único modelo: movimiento (velocidad > 0), detenida encendida (velocidad 0 e ignición 1), apagada (ignición 0), sin reportar (más de 24 horas o sin fecha válida) y estado desconocido (telemetría insuficiente o fecha futura). Son estados del último reporte, no una garantía de conectividad en tiempo real.
 
-- **Indicadores**: vehículos activos, reportando en 24 h, mantenimientos vencidos, kilometraje del período.
-- **Kilometraje diario** por vehículo (gráfico de línea con crosshair y detalle al pasar el cursor).
-- **Tabla de flota**: último reporte, velocidad y semáforo de mantenimiento; al tocar una fila cambia el vehículo del gráfico.
+- Cada KPI filtra la lista; mantenimiento cuenta unidades con servicios vencidos/próximos y puede solaparse.
+- Búsqueda por nombre/placa, orden por columnas, 25 unidades por página y tarjetas en móvil.
+- Acciones visibles: mapa de la unidad, rutas del clásico y distancia diaria bajo demanda.
+- Fechas sin zona se interpretan en Guatemala (UTC−6). El período de distancia incluye exactamente 7, 14 o 30 días calendario, incluyendo hoy parcial. Días omitidos por la API se muestran como 0 km.
+- Refresco a los 60 segundos de terminar la consulta, con cancelación, pausa en pestañas ocultas y conservación de datos ante fallos. Mantenimiento puede fallar independientemente. Un 401 oculta el tablero.
 
-El aislamiento por empresa lo impone la API, no el front: la sesión determina qué vehículos se ven.
+## Desarrollo con datos ficticios (sin producción)
 
-## Decisiones de visualización
+```bash
+VITE_MOCK=1 npm run dev -- --host 127.0.0.1
+node scripts/check-dashboard.mjs
+node scripts/screenshot-dashboard.mjs
+```
 
-Siguen el método de la skill `dataviz` (forma → color → validación → marcas → interacción → accesibilidad):
+El modo mock intercepta el cliente antes de `fetch` y deshabilita el proxy de Vite. Los fixtures se importan exclusivamente con `import.meta.env.DEV`; `vite preview` sirve producción y **no** activa el mock. Hay 150 unidades. Parámetros de desarrollo: `?scenario=empty`, `error`, `session`, `maintenance` o `distance`.
 
-- **Los indicadores son cifras, no gráficos**: el dato es un titular, no una distribución.
-- **Una sola serie ⇒ sin caja de leyenda**; el título nombra la serie.
-- **Paleta validada por script**, no a ojo: azul `#2a78d6` (claro) / `#3987e5` (oscuro). Ambos modos pasan banda de luminosidad, piso de croma, separación para daltonismo y contraste.
-- **El modo oscuro es un juego de pasos elegido**, no una inversión automática; se verificó capturando la pantalla en los dos modos.
-- **El estado nunca es solo color**: el semáforo de mantenimiento lleva punto + etiqueta ("Al día", "Próximo", "Vencido").
-- **Etiqueta directa solo en el pico**, nunca un número sobre cada punto; el resto vive en el hover.
-- **Los días sin recorrido se rellenan con 0.** La API agrupa por fecha y omite los días sin movimiento; graficarlos tal cual dejaba los puntos equiespaciados por índice y una semana sin actividad se veía igual que un día — el eje temporal mentía.
-- **El eje Y redondea hacia arriba al siguiente paso.** Sin eso, un máximo de 9 con ticks 0–5 dibujaba el pico fuera del área del gráfico.
+El script visual usa Chrome headless (ruta opcional `CHROME_PATH`), bloquea solicitudes externas y `/api/`, no usa cookies y genera seis PNG en `/tmp/deleg/tablero/`: 1366×768, 1920×1080 y 390×844, claro/oscuro. Comprueba conteos, consola y desbordamiento horizontal. Se debe revisar visualmente cada captura.
+
+Comprobación del aislamiento de fixtures tras compilar:
+
+```bash
+npm run build
+rg 'TABLERO_MOCK_ONLY_150|Flota demostración|Fallo simulado|fixtures' dist
+# Esperado: ninguna coincidencia (exit 1).
+```
 
 ## Desarrollo
 

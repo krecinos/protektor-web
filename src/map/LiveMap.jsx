@@ -29,7 +29,7 @@ export default function LiveMap() {
   const [mapError, setMapError] = useState("");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState(() => new URLSearchParams(window.location.search).get("device"));
   const [panelOpen, setPanelOpen] = useState(false);
   const host = useRef(null);
   const mapRef = useRef(null);
@@ -254,8 +254,8 @@ export default function LiveMap() {
   }, [fleet, maps, loading, unauthorized, selectedId, selected, now, isMobile, capabilities]);
 
   useEffect(() => {
-    if (selectedId != null && !selected) setSelectedId(null);
-  }, [selectedId, selected]);
+    if (!loading && selectedId != null && !selected) setSelectedId(null);
+  }, [selectedId, selected, loading]);
 
   useEffect(() => {
     if (isMobile) {

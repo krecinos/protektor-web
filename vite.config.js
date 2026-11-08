@@ -10,7 +10,7 @@ export default defineConfig({
   server: {
     // En desarrollo, /api/v2 se reenvía a producción para trabajar contra datos
     // reales sin levantar la API local. Se manda la cookie del navegador.
-    proxy: {
+    proxy: process.env.VITE_MOCK === "1" ? {} : {
       "/api/v2": {
         target: "https://app.protektor.com.gt",
         changeOrigin: true,

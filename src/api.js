@@ -15,9 +15,14 @@ export class ApiError extends Error {
   }
 }
 
-async function request(method, path, body) {
+async function request(method, path, body, signal) {
+  if (import.meta.env.DEV && import.meta.env.VITE_MOCK === "1") {
+    const { mockRequest } = await import("./dev/fixtures");
+    return mockRequest(path, signal);
+  }
   const res = await fetch(`${BASE}${path}`, {
     method,
+    signal,
     credentials: "include", // manda la cookie de sesión
     headers: {
       Accept: "application/json",
@@ -37,7 +42,7 @@ async function request(method, path, body) {
   return res.json();
 }
 
-const get = (path) => request("GET", path);
+const get = (path, signal) => request("GET", path, undefined, signal);
 const patch = (path, body) => request("PATCH", path, body);
 
 export const api = {
@@ -56,53 +61,43 @@ export const api = {
   updateLead: (id, body) => patch(`/chat/leads/${id}`, body),
   leadHistory: (id) => get(`/chat/leads/${id}/followups`),
 
-  whoami: () => get("/auth/whoami"),
+  whoami: (signal) => get("/auth/whoami", signal),
   navigation: () => get("/auth/navigation"),
   // `status`: 1 = solo activos (el mapa no debe mostrar vehiculos dados de baja).
   devices: (limit = 500, status) =>
     get(`/fleet/devices?limit=${limit}${status != null ? `&status=${status}` : ""}`),
+  allActiveDevices: async (signal) => {
+    const items = [];
+    let total = Infinity;
+    while (items.length < total) {
+      const page = await get(`/fleet/devices?limit=500&status=1&offset=${items.length}`, signal);
+      total = page.total;
+      if (!page.items.length && items.length < total) throw new Error("Catálogo incompleto; vuelve a intentar.");
+      items.push(...page.items);
+    }
+    return [...new Map(items.map(d => [d.id, d])).values()];
+  },
   fleetSummary: () => get("/fleet/summary"),
   accountBalance: () => get("/account/balance"),
-  positions: () => get("/fleet/positions"),
-  maintenanceStatus: () => get("/maintenance/status"),
-  distance: (deviceId, start, end) =>
+  positions: (signal) => get("/fleet/positions", signal),
+  maintenanceStatus: (signal) => get("/maintenance/status", signal),
+  distance: (deviceId, start, end, signal) =>
     get(
       `/fleet/devices/${deviceId}/distance` +
-        `?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`,
+        `?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`, signal,
     ),
 };
 
-const isoDay = (d) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-    d.getDate(),
-  ).padStart(2, "0")}`;
+const isoDay = (d) => new Date(d.getTime() - 6 * 3600000).toISOString().slice(0, 10);
 
-/** Rango [inicio, fin] en el formato que espera la API (naive, hora local). */
-export function dateRange(days) {
-  const end = new Date();
-  const start = new Date(end.getTime() - days * 86400000);
-  return [`${isoDay(start)}T00:00:00`, `${isoDay(end)}T23:59:59`];
+/** Días calendario de Guatemala, incluyendo hoy. */
+export function dateRange(days, now = new Date()) {
+  return [`${isoDay(new Date(now.getTime() - (days - 1) * 86400000))}T00:00:00`, `${isoDay(now)}T23:59:59`];
 }
-
-/**
- * Completa con 0 los días sin recorrido.
- *
- * La API agrupa por fecha, así que un día sin movimiento simplemente no viene.
- * Si se grafican tal cual, los puntos quedan equiespaciados por índice y una
- * semana sin actividad se ve igual que un día: el eje temporal miente. Rellenar
- * es lo que hace que la distancia horizontal signifique tiempo real.
- */
-export function fillMissingDays(rows, days) {
-  const byDay = new Map(rows.map((r) => [r.day, r.km]));
-  const out = [];
-  let cumulative = 0;
-  const today = new Date();
-  for (let i = days; i >= 0; i--) {
-    const d = new Date(today.getTime() - i * 86400000);
-    const key = isoDay(d);
-    const km = byDay.get(key) ?? 0;
-    cumulative += km;
-    out.push({ day: key, km, cumulative_km: Math.round(cumulative * 100) / 100 });
-  }
-  return out;
+export function fillMissingDays(rows, days, now = new Date()) {
+  const byDay = new Map(rows.map(r => [r.day, Number(r.km)]));
+  return Array.from({ length: days }, (_, i) => {
+    const day = isoDay(new Date(now.getTime() - (days - 1 - i) * 86400000));
+    return { day, km: byDay.get(day) ?? 0 };
+  });
 }
